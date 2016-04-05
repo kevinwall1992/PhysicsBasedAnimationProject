@@ -74,6 +74,9 @@ namespace Physics
 					if(p->position.SquaredDistance(unaccelerated_space[i]->position)< squared_max_distance)
 						p->neighbors.push_back(unaccelerated_space[i]);
 		}
+
+		//this is hacky... should NOT be in this function.
+		p->force_partners= p->neighbors;
 	}
 
 	AccelerationGrid::AccelerationGrid(FVector2f grid_low_, float grid_cell_size_, int grid_size_)
@@ -150,16 +153,23 @@ namespace Physics
 	}
 
 	float foo= 0;
-	void ParticlePhysicsSystem::GetForce(Particle *p, FVector2f &force)
+	void ParticlePhysicsSystem::ComputeAcceleration(Particle *p)
 	{
 		static FVector2f center= MakeFVector2f(0.001f, 0.001f);
+		FVector2f force;//you could try static as an experiment
 		force.ZeroOut();
 
-		for(unsigned int i= 0; i< p->neighbors.size(); i++)
+		for(unsigned int i= 0; i< p->force_partners.size(); i++)
 		{
+			if(p->force_partners[i]== nullptr)
+				continue;
+
 			Particle *n= p->neighbors[i];
 			if(n== p)
 				continue;
+
+			FVector2f partner_force;
+			partner_force.ZeroOut();
 
 			float weight= n->mass / n->density;
 			FVector2f attraction_vector= (p->position- n->position).Normalized();//curious whether this creates two vectors or one
@@ -170,11 +180,24 @@ namespace Physics
 			//	cout << "Pressure is negative!";
 			//else
 			//	cout << "Pressure is positive";
-
-			force+= (attraction_vector* (pressure_magnitude));
+			partner_force+= (attraction_vector* (pressure_magnitude));
 
 			//Viscosity
-			force+= (p->velocity- n->velocity)* p->viscosity* weight* ViscosityKernel_SecondDerivative(p->position.Distance(n->position), viscosity_radius)* -1;
+			partner_force+= (p->velocity- n->velocity)* p->viscosity* weight* ViscosityKernel_SecondDerivative(p->position.Distance(n->position), viscosity_radius)* -1;
+
+
+			force+= partner_force;
+			n->acceleration+= partner_force/ (n->mass* -1);
+
+			p->force_partners[i]= nullptr;
+			for(unsigned int j= 0; j< n->force_partners.size(); j++)
+			{
+				if(n->force_partners[j]== p)
+				{
+					n->force_partners[j]= nullptr;
+					break;
+				}
+			}
 		}
 
 		//Gravity
@@ -197,6 +220,8 @@ namespace Physics
 			//force+= flow_force* (max(0.5- abs(p->position[0]+ 2), 0.0f)/ 0.5);
 			//force+= flow_force* (max(0.5- abs(p->position[0]- 2), 0.0f)/ 0.5)* -1;
 		}
+
+		p->acceleration+= force/ p->mass;
 	}
 
 	ParticlePhysicsSystem::ParticlePhysicsSystem()
@@ -249,17 +274,16 @@ namespace Physics
 		FVector2f force;//opt
 		for(int step= 0; step< step_count; step++)
 		{
+			acceleration_grid->UpdateGrid(particles);
+			UpdateParticleProperties();
+
 			for(unsigned int i= 0; i< particles.size(); i++)
 			{
-				GetForce(particles[i], force);
-				particles[i]->acceleration= force/ particles[i]->mass;
+				ComputeAcceleration(particles[i]);
 			}
 
 			for(unsigned int i= 0; i< particles.size(); i++)
 				particles[i]->Step(total_time_step/ step_count);
-
-			acceleration_grid->UpdateGrid(particles);
-			UpdateParticleProperties();
 
 			foo+= total_time_step/ step_count;
 		}

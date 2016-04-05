@@ -81,7 +81,7 @@ namespace Physics
 		AccelerationGrid *acceleration_grid;
 
 		void UpdateParticleProperties();
-		void GetForce(Particle *particle, FVector2f &force);//make sure we take advantage of symmetry
+		void ComputeAcceleration(Particle *particle);//make sure we take advantage of symmetry
 
 	public:
 		ParticlePhysicsSystem();

@@ -4,6 +4,7 @@ Particle::Particle(FVector2f position_)
 {
 	position= position_;
 	velocity.ZeroOut();
+	acceleration.ZeroOut();
 
 	this->mass= 1.0f;
 	this->gas_constant= 0.2;
@@ -20,4 +21,6 @@ void Particle::Step(float t)
 
 	position+= (velocity* t);
     velocity+= (acceleration* t);
+
+	acceleration.ZeroOut();
 }

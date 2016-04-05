@@ -25,8 +25,8 @@ struct Particle
 	//implementation stuff
 	vector<Particle *> neighbors;
 	FVector2i grid_index;
-	//vector<Particle *> force_partners;
-	//vector<Particle *> property_partners;
+	vector<Particle *> force_partners;
+	vector<Particle *> property_partners;
 	
 	Particle(FVector2f position);
 
