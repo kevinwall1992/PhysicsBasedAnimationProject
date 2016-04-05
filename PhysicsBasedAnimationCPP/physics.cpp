@@ -1,0 +1,283 @@
+#include "Physics.h"
+
+#include <minmax.h>
+#include <iostream>
+using std::cout;
+
+
+namespace Physics
+{
+	ParticlePhysicsSystem *particle_physics_system;
+
+
+	FVector2i AccelerationGrid::ComputeParticleIndex(Particle *p)
+	{
+		//static FVector2f half_vector= MakeFVector2f(0.5f, 0.5f);
+
+		FVector2f float_index= ((p->position- grid_low)/ grid_cell_size);
+		return MakeFVector2i(floor(float_index[0]), floor(float_index[1]));
+	}
+
+	/*FVector2i AccelerationGrid::GetParticleIndex(Particle *p)
+	{
+		return p->grid_index;
+	}*/
+	
+	//try using grid index to get rough but fast approximation of which grid cells to look in
+	//(or stop storing grid indices, because we dont use them)
+	void AccelerationGrid::ComputeParticleNeighbors(Particle *p)
+	{
+		float max_distance= 1;
+
+		p->neighbors.clear();
+
+		float squared_max_distance= max_distance* max_distance;
+		float grid_max_distance= max_distance/ grid_cell_size;
+		float grid_squared_max_distance= pow(grid_max_distance, 2);//faster to be explicit? Also, having to calculate this every call...
+		FVector2f grid_position= (p->position- grid_low)/ grid_cell_size;
+
+		int min_x= floor(grid_position[0]- grid_max_distance);
+		int max_x= floor(grid_position[0]+ grid_max_distance);
+		int min_y= floor(grid_position[1]- grid_max_distance);
+		int max_y= floor(grid_position[1]+ grid_max_distance);
+
+		for(int i= min(max(min_x, 0), grid_size); i<= max(min(max_x, grid_size), 0); i++)
+		{
+			for(int j= min(max(min_y, 0), grid_size); j<= max(min(max_y, grid_size), 0); j++)
+			{
+				if(grid[i][j].size()== 0)
+					continue;
+
+				FVector2f clamped_position= MakeFVector2f(min(max(grid_position[0], i), i+ 1),
+					                                      min(max(grid_position[1], j), j+ 1));//break this up over both loops
+				if(grid_position.SquaredDistance(clamped_position)> grid_squared_max_distance)
+					continue;
+				
+				for(unsigned int k= 0; k< grid[i][j].size(); k++)
+				{
+					if(p->static_)
+						continue;
+					if((p->position.SquaredDistance(grid[i][j][k]->position)>= squared_max_distance))//should be strictly greater than
+						continue;
+
+					p->neighbors.push_back(grid[i][j][k]);
+				}
+			}
+		}
+
+
+		if((min_x>= 0 && max_x< grid_size) && (min_y>= 0 && max_y< grid_size));
+		else
+		{
+			for(unsigned int i= 0; i< unaccelerated_space.size(); i++)
+				if(!p->static_)
+					if(p->position.SquaredDistance(unaccelerated_space[i]->position)< squared_max_distance)
+						p->neighbors.push_back(unaccelerated_space[i]);
+		}
+	}
+
+	AccelerationGrid::AccelerationGrid(FVector2f grid_low_, float grid_cell_size_, int grid_size_)
+	{
+		grid_low= grid_low_;
+		grid_cell_size= grid_cell_size_;
+		grid_size= grid_size_;
+
+
+		grid= new vector<Particle *> *[grid_size];
+
+		int max_particles= 100;
+		for(int i= 0; i< grid_size; i++)
+			grid[i]= new vector<Particle *>[grid_size];
+	}
+
+	void AccelerationGrid::AddParticle(Particle *p)
+	{
+		FVector2i index= ComputeParticleIndex(p);
+		if(!((index[0]< 0 || index[0]>= grid_size) || (index[1]< 0 || index[1]>= grid_size)))//could test out unlikely thing here
+		{
+			grid[index[0]][index[1]].push_back(p);
+			p->grid_index= index;
+		}
+		else
+		{
+			unaccelerated_space.push_back(p);
+			p->grid_index= MakeFVector2i(-1, -1);
+			//p->static_= true;
+		}
+
+		
+	}
+
+	void AccelerationGrid::UpdateGrid(const vector<Particle *> &particles)
+	{
+		for(int i= 0; i< grid_size; i++)
+			for(int j= 0; j< grid_size; j++)
+				grid[i][j].clear();
+		unaccelerated_space.clear();
+
+		for(unsigned int i= 0; i< particles.size(); i++)
+		{
+			Particle *p =  particles[i];
+			AddParticle(p);
+		}
+
+		for(unsigned int i= 0; i< particles.size(); i++)
+		{
+			Particle *p =  particles[i];
+			ComputeParticleNeighbors(p);
+		}
+	}
+
+	/*vector<Particle *> * AccelerationGrid::GetNeighbors(Particle *p, float max_distance)
+	{
+		return &particle_neighbors[p];
+	}*/
+
+	
+	void ParticlePhysicsSystem::UpdateParticleProperties()
+	{
+		for(unsigned int i= 0; i< particles.size(); i++)
+		{
+			Particle *p= particles[i];
+
+			float density= 0;
+			for(unsigned int j= 0; j< p->neighbors.size(); j++)
+				density+= p->mass* Poly6Kernel(p->position.Distance(p->neighbors[j]->position), density_radius);
+
+			p->density= density;
+			p->pressure= p->gas_constant* (p->density- p->rest_density);
+		}
+	}
+
+	float foo= 0;
+	void ParticlePhysicsSystem::GetForce(Particle *p, FVector2f &force)
+	{
+		static FVector2f center= MakeFVector2f(0.001f, 0.001f);
+		force.ZeroOut();
+
+		for(unsigned int i= 0; i< p->neighbors.size(); i++)
+		{
+			Particle *n= p->neighbors[i];
+			if(n== p)
+				continue;
+
+			float weight= n->mass / n->density;
+			FVector2f attraction_vector= (p->position- n->position).Normalized();//curious whether this creates two vectors or one
+
+			//Pressure
+			float pressure_magnitude= (p->pressure+ n->pressure)* weight* SpikyKernel_Derivative(p->position.Distance(n->position), pressure_radius)/ -2;
+			//if(pressure_magnitude< 0)
+			//	cout << "Pressure is negative!";
+			//else
+			//	cout << "Pressure is positive";
+
+			force+= (attraction_vector* (pressure_magnitude));
+
+			//Viscosity
+			force+= (p->velocity- n->velocity)* p->viscosity* weight* ViscosityKernel_SecondDerivative(p->position.Distance(n->position), viscosity_radius)* -1;
+		}
+
+		//Gravity
+		force+= (center- p->position).Normalized()* 0.05f;
+
+		//Friction
+		//force+= p->velocity* -0.05f;
+
+		//Test
+		if(foo> 16.0f && foo< 16.3f)
+		{
+			p->static_= false;
+		}
+
+		if(p->mass< 1.5f)
+		{
+			//FVector2f flow_force= MakeFVector2f(0.0f, -10.5f);
+			//force+= flow_force* (max(0.5- abs(p->position[0]), 0.01)/ 0.5)* (max(5- abs(p->position[1]), 0)/ 5);
+			//force+= flow_force* (max(10- abs(p->position[0]), 0.01)/ 10)* (max(5- abs(p->position[1]), 0)/ 5);
+			//force+= flow_force* (max(0.5- abs(p->position[0]+ 2), 0.0f)/ 0.5);
+			//force+= flow_force* (max(0.5- abs(p->position[0]- 2), 0.0f)/ 0.5)* -1;
+		}
+	}
+
+	ParticlePhysicsSystem::ParticlePhysicsSystem()
+	{
+		acceleration_grid= new AccelerationGrid(MakeFVector2f(-100.0f, -100.0f), 1.0f, 200);
+
+		for(int i= -20; i<= 20; i++)
+		{
+			for(int j= -20; j<= 20; j++)
+			{
+				Particle *p= new Particle(MakeFVector2f(i, j));
+				particles.push_back(p);
+				acceleration_grid->AddParticle(p);
+			}
+		}
+
+		//if(false)
+		for(int i= -6; i<= -3; i++)
+		{
+			for(int j= 50; j<= 180; j++)
+			{
+				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
+				p->static_= true;
+				p->velocity= MakeFVector2f(0.0f, -5.0f);
+				p->mass= 1.0f;
+				p->gas_constant/= p->mass;
+				p->rest_density/= p->mass;
+				particles.push_back(p);
+				acceleration_grid->AddParticle(p);
+			}
+		}
+
+	}
+
+	ParticlePhysicsSystem::~ParticlePhysicsSystem()
+	{
+		delete acceleration_grid;
+
+		for(unsigned int i= 0; i< particles.size(); i++)
+			delete particles[i];
+	}
+
+	vector<Particle *> ParticlePhysicsSystem::GetParticles()
+	{
+		return particles;
+	}
+
+	void ParticlePhysicsSystem::Simulate(float total_time_step, int step_count)
+	{
+		FVector2f force;//opt
+		for(int step= 0; step< step_count; step++)
+		{
+			for(unsigned int i= 0; i< particles.size(); i++)
+			{
+				GetForce(particles[i], force);
+				particles[i]->acceleration= force/ particles[i]->mass;
+			}
+
+			for(unsigned int i= 0; i< particles.size(); i++)
+				particles[i]->Step(total_time_step/ step_count);
+
+			acceleration_grid->UpdateGrid(particles);
+			UpdateParticleProperties();
+
+			foo+= total_time_step/ step_count;
+		}
+	}
+
+	void Initialize()
+	{
+		particle_physics_system= new ParticlePhysicsSystem();
+	}
+
+	void Update()
+	{
+		particle_physics_system->Simulate(0.0333f, 3);
+	}
+
+	void Conclude()
+	{
+		delete particle_physics_system;
+	}
+
+}
