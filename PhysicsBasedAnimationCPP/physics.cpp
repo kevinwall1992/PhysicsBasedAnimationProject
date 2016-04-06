@@ -155,6 +155,9 @@ namespace Physics
 	float foo= 0;
 	void ParticlePhysicsSystem::ComputeAcceleration(Particle *p)
 	{
+		//if(p->static_)
+		//	return;
+
 		static FVector2f center= MakeFVector2f(0.001f, 0.001f);
 		FVector2f force;//you could try static as an experiment
 		force.ZeroOut();
