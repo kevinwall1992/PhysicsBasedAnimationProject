@@ -6,23 +6,26 @@
 #include <cstdarg>
 
 template<int d, int resolution>
-struct Dumb 
+struct FlattenIndexStruct 
 {
 	static int FlattenIndex(int (&index)[d])
 	{
 		using shorter_t = int(&)[d-1];
-
-		//int index_[d- 1];
-		//memcpy(index_, index, sizeof(int)* (d- 1));
-		int foo= index[d- 1]* (int)pow(resolution, d- 1);
-		shorter_t bleep= reinterpret_cast<shorter_t>(index);
-		int bar= Dumb<d-1, resolution>::FlattenIndex(bleep);
-		return foo+ bar;
+		return index[d- 1]* (int)pow(resolution, d- 1)+ Dumb<d-1, resolution>::FlattenIndex(reinterpret_cast<shorter_t>(index));
 	}
 };
 
 template<int resolution>
-struct Dumb<0, resolution>
+struct FlattenIndexStruct<2, resolution>
+{
+	static int FlattenIndex(int (&index)[2])
+	{
+		return index[1]* resolution+ index[0];
+	}
+};
+
+template<int resolution>
+struct FlattenIndexStruct<0, resolution>
 {
 	static int FlattenIndex(...)
 	{
@@ -33,7 +36,7 @@ struct Dumb<0, resolution>
 template<int d, int resolution>
 int FlattenIndex(int (&index)[d])//adding specialization for low orders might be good
 {
-	return Dumb<d, resolution>::FlattenIndex(index);
+	return FlattenIndexStruct<d, resolution>::FlattenIndex(index);
 }
 
 template<int d, int resolution>//nice if we could make this recursive

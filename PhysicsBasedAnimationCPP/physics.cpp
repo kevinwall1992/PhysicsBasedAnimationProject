@@ -239,8 +239,9 @@ namespace Physics
 			float weight= n->mass / n->density;
 			FVector2f attraction_vector= (p->position- n->position).Normalized();//curious whether this creates two vectors or one
 
+			float distance= p->position.Distance(n->position);
 			//Pressure
-			float pressure_magnitude= (p->pressure+ n->pressure)* weight* SpikyKernel_Derivative(p->position.Distance(n->position), pressure_radius)/ -2;
+			float pressure_magnitude= (p->pressure+ n->pressure)* (weight* SpikyKernel_Derivative(distance, pressure_radius)/ -2);
 			//if(pressure_magnitude< 0)
 			//	cout << "Pressure is negative!";
 			//else
@@ -248,7 +249,7 @@ namespace Physics
 			partner_force+= (attraction_vector* (pressure_magnitude));
 
 			//Viscosity
-			partner_force+= (p->velocity- n->velocity)* p->viscosity* weight* ViscosityKernel_SecondDerivative(p->position.Distance(n->position), viscosity_radius)* -1;
+			partner_force+= (p->velocity- n->velocity)* (p->viscosity* weight* ViscosityKernel_SecondDerivative(distance, viscosity_radius)* -1);
 
 
 			force+= partner_force;
