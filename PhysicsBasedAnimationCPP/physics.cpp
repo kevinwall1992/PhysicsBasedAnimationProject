@@ -1,5 +1,5 @@
 #include "Physics.h"
-#include "MemoryFunction.h"
+#include "LookupTable.h"
 
 #include <minmax.h>
 #include <iostream>
@@ -294,18 +294,18 @@ namespace Physics
 	{
 		acceleration_grid= new AccelerationGrid(MakeFVector2f(-100.0f, -100.0f), 1.0f, 200);
 
-		for(int i= -20; i<= 20; i++)
+		for(int i= -30; i<= 30; i++)
 		{
-			for(int j= -20; j<= 20; j++)
+			for(int j= -30; j<= 30; j++)
 			{
-				Particle *p= new Particle(MakeFVector2f(i, j));
+				Particle *p= new Particle(MakeFVector2f(i/ 1.5f, j/ 1.5f));
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 			}
 		}
 
 		//if(false)
-		for(int i= -6; i<= -3; i++)
+		for(int i= -6; i<= 0; i++)
 		{
 			for(int j= 50; j<= 180; j++)
 			{
@@ -362,7 +362,7 @@ namespace Physics
 
 	void Update()
 	{
-		particle_physics_system->Simulate(0.0333f, 3);
+		particle_physics_system->Simulate(0.0333f, 1);
 	}
 
 	void Conclude()
