@@ -97,6 +97,16 @@ struct FVector
 		return *this;
 	}
 
+	FVector<T, d> operator*(const FVector<T, d> &b) const
+	{
+		FVector<T, d> c;
+
+		for(int i= 0; i< d; i++)
+			c[i]= (*this)[i]* b[i];
+
+		return c;
+	}
+
 	template<class U>
 	FVector<T, d> operator*(const U &s) const
 	{
@@ -115,6 +125,16 @@ struct FVector
 			(*this)[i]= (T)((*this)[i]* s);
 
 		return *this;
+	}
+
+	FVector<T, d> operator/(const FVector<T, d> &b) const
+	{
+		FVector<T, d> c;
+
+		for(int i= 0; i< d; i++)
+			c[i]= (*this)[i]/ b[i];
+
+		return c;
 	}
 
 	template<class U>

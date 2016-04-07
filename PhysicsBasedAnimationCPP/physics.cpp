@@ -1,4 +1,5 @@
 #include "Physics.h"
+#include "MemoryFunction.h"
 
 #include <minmax.h>
 #include <iostream>
@@ -15,7 +16,7 @@ namespace Physics
 		//static FVector2f half_vector= MakeFVector2f(0.5f, 0.5f);
 
 		FVector2f float_index= ((p->position- grid_low)/ grid_cell_size);
-		return MakeFVector2i(floor(float_index[0]), floor(float_index[1]));
+		return MakeFVector2i(floor(float_index[0]), floor(float_index[1]));//floors not actually necessary
 	}
 
 	/*FVector2i AccelerationGrid::GetParticleIndex(Particle *p)
@@ -136,7 +137,68 @@ namespace Physics
 		return &particle_neighbors[p];
 	}*/
 
-	
+
+	float Poly6Kernel(float r, float h)
+	{
+		if(r> h)
+			return 0;
+
+		return (float)pow(pow(h, 2)- pow(r, 2), 3)* 315/ (64* M_PI* pow(h, 9));
+	}
+
+	float SpikyKernel(float r, float h)
+	{
+		if(r> h)
+			return 0;
+
+		return (float)pow(h- r, 3)* 15/ (M_PI* pow(h, 6));
+	}
+
+	float SpikyKernel_Derivative(float r, float h)
+	{
+		if(r> h)
+			return 0;
+
+		return (float)(15/ (M_PI* pow(h, 6)))* -3* pow(r- 1, 2);
+	}
+
+	float ViscosityKernel_SecondDerivative(float r, float h)
+	{
+		if(r> h)
+			return 0;
+
+		//return (float)(15/ (2* M_PI* pow(h, 3)))* ((-6.0/ (2* pow(h, 3)))* r+ (2.0/ pow(h, 2))+ (h/ pow(r, 3)));
+		return 45* (h- r)/ (M_PI* pow(h, 6));
+	}
+
+	LookupTable<float, 2, 10> *poly6_kernel_lookup_table;
+	float Poly6Kernel_Oracle(float input[2])
+	{
+		return Poly6Kernel(input[0], input[1]);
+	}
+	float Poly6Kernel_Lookup(float r, float h)
+	{
+		float foo= Poly6Kernel(r, h);
+		float bar= poly6_kernel_lookup_table->Lookup(MakeFVector2f(r, h));
+
+		return bar;
+	}
+
+	void InitializeLookups()
+	{
+		{
+			FVector2f low= MakeFVector2f(0.0f, 1.0f);
+			FVector2f high= MakeFVector2f(1.0f, 1.0f);
+			poly6_kernel_lookup_table= new LookupTable<float, 2, 10>(Poly6Kernel_Oracle, low, high);
+		}
+	}
+
+	void FreeLookups()
+	{
+		delete poly6_kernel_lookup_table;
+	}
+
+
 	void ParticlePhysicsSystem::UpdateParticleProperties()
 	{
 		for(unsigned int i= 0; i< particles.size(); i++)
@@ -145,7 +207,7 @@ namespace Physics
 
 			float density= 0;
 			for(unsigned int j= 0; j< p->neighbors.size(); j++)
-				density+= p->mass* Poly6Kernel(p->position.Distance(p->neighbors[j]->position), density_radius);
+				density+= p->mass* Poly6Kernel_Lookup(p->position.Distance(p->neighbors[j]->position), density_radius);
 
 			p->density= density;
 			p->pressure= p->gas_constant* (p->density- p->rest_density);
@@ -256,7 +318,6 @@ namespace Physics
 				acceleration_grid->AddParticle(p);
 			}
 		}
-
 	}
 
 	ParticlePhysicsSystem::~ParticlePhysicsSystem()
@@ -295,6 +356,7 @@ namespace Physics
 	void Initialize()
 	{
 		particle_physics_system= new ParticlePhysicsSystem();
+		InitializeLookups();
 	}
 
 	void Update()
@@ -304,6 +366,7 @@ namespace Physics
 
 	void Conclude()
 	{
+		delete poly6_kernel_lookup_table;
 		delete particle_physics_system;
 	}
 

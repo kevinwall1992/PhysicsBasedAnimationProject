@@ -14,7 +14,7 @@ namespace Physics
 {
 	class AccelerationGrid
 	{
-		vector<Particle *> **grid;//Think this is fine...
+		vector<Particle *> **grid;//Try turning this into flat array of Particle arrays
 		vector<Particle *> unaccelerated_space;
 		//unordered_map<Particle *, FVector2i> particle_indices;
 		//unordered_map<Particle *, vector<Particle *>> particle_neighbors;
@@ -40,40 +40,13 @@ namespace Physics
 	};
 
 	//need to add lookup table
-	inline float Poly6Kernel(float r, float h)
-	{
-		if(r> h)
-			return 0;
+	float Poly6Kernel(float r, float h);
+	float SpikyKernel(float r, float h);
+	float SpikyKernel_Derivative(float r, float h);
+	float ViscosityKernel_SecondDerivative(float r, float h);
 
-		return (float)pow(pow(h, 2)- pow(r, 2), 3)* 315/ (64* M_PI* pow(h, 9));
-	}
-
-	inline float SpikyKernel(float r, float h)
-	{
-		if(r> h)
-			return 0;
-
-		return (float)pow(h- r, 3)* 15/ (M_PI* pow(h, 6));
-	}
-
-	inline float SpikyKernel_Derivative(float r, float h)
-	{
-		if(r> h)
-			return 0;
-
-		return (float)(15/ (M_PI* pow(h, 6)))* -3* pow(r- 1, 2);
-	}
-
-	inline float ViscosityKernel_SecondDerivative(float r, float h)
-	{
-		if(r> h)
-			return 0;
-
-		//return (float)(15/ (2* M_PI* pow(h, 3)))* ((-6.0/ (2* pow(h, 3)))* r+ (2.0/ pow(h, 2))+ (h/ pow(r, 3)));
-		return 45* (h- r)/ (M_PI* pow(h, 6));
-	}
-
-	
+	float Poly6Kernel_Lookup(float r, float h);
+	void InitializeLookups();
 
 	class ParticlePhysicsSystem
 	{
