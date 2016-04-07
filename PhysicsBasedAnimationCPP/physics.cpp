@@ -269,7 +269,7 @@ namespace Physics
 		//force+= p->velocity* -0.05f;
 
 		//Test
-		if(foo> 16.0f && foo< 16.3f)
+		if(foo> 32.0f && foo< 32.3f)
 		{
 			p->static_= false;
 		}
@@ -303,11 +303,11 @@ namespace Physics
 		//if(false)
 		for(int i= -6; i<= 0; i++)
 		{
-			for(int j= 80; j<= 140; j++)
+			for(int j= 120; j<= 140; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
 				p->static_= true;
-				p->velocity= MakeFVector2f(0.0f, -10.0f);
+				p->velocity= MakeFVector2f(0.0f, -30.0f);
 				p->mass= 1.0f;
 				p->gas_constant/= p->mass;
 				p->rest_density/= p->mass;
