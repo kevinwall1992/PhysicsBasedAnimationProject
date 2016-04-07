@@ -10,7 +10,7 @@ namespace Physics
 {
 	ParticlePhysicsSystem *particle_physics_system;
 
-	const int poly6_kernel_sampling_resolution[2]= {10, 1};
+	const int poly6_kernel_sampling_resolution[2]= {4, 1};
 
 	typedef LookupTable<float, 2, poly6_kernel_sampling_resolution> Poly6LookupTable;
 	Poly6LookupTable *poly6_kernel_lookup_table;
@@ -290,11 +290,11 @@ namespace Physics
 	{
 		acceleration_grid= new AccelerationGrid(MakeFVector2f(-100.0f, -100.0f), 1.0f, 200);
 
-		for(int i= -30; i<= 30; i++)
+		for(int i= -40; i<= 40; i++)
 		{
-			for(int j= -30; j<= 30; j++)
+			for(int j= -40; j<= 40; j++)
 			{
-				Particle *p= new Particle(MakeFVector2f(i/ 1.5f, j/ 1.5f));
+				Particle *p= new Particle(MakeFVector2f(i/ 1.8f, j/ 1.8f));
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 			}
@@ -303,11 +303,11 @@ namespace Physics
 		//if(false)
 		for(int i= -6; i<= 0; i++)
 		{
-			for(int j= 50; j<= 180; j++)
+			for(int j= 80; j<= 140; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
 				p->static_= true;
-				p->velocity= MakeFVector2f(0.0f, -5.0f);
+				p->velocity= MakeFVector2f(0.0f, -10.0f);
 				p->mass= 1.0f;
 				p->gas_constant/= p->mass;
 				p->rest_density/= p->mass;
@@ -368,7 +368,7 @@ namespace Physics
 
 	void Update()
 	{
-		particle_physics_system->Simulate(0.0333f, 1);
+		particle_physics_system->Simulate(0.0333f* 2, 1);
 	}
 
 	void Conclude()
