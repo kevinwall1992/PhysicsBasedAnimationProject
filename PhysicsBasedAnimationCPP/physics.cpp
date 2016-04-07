@@ -10,7 +10,9 @@ namespace Physics
 {
 	ParticlePhysicsSystem *particle_physics_system;
 
-	typedef LookupTable<float, 2> Poly6LookupTable;
+	const int poly6_kernel_sampling_resolution[2]= {10, 1};
+
+	typedef LookupTable<float, 2, poly6_kernel_sampling_resolution> Poly6LookupTable;
 	Poly6LookupTable *poly6_kernel_lookup_table;
 
 
@@ -354,7 +356,7 @@ namespace Physics
 			FVector2f low= MakeFVector2f(0.0f, 1.0f);
 			FVector2f high= MakeFVector2f(1.0f, 1.0f);
 			FVector2i resolution= MakeFVector2i(10, 1);
-			poly6_kernel_lookup_table= new Poly6LookupTable(Poly6Kernel_Oracle, low, high, resolution);
+			poly6_kernel_lookup_table= new Poly6LookupTable(Poly6Kernel_Oracle, low, high);
 		}
 	}
 
