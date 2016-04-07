@@ -10,6 +10,9 @@ namespace Physics
 {
 	ParticlePhysicsSystem *particle_physics_system;
 
+	typedef LookupTable<float, 2, 10> Poly6LookupTable;
+	Poly6LookupTable *poly6_kernel_lookup_table;
+
 
 	FVector2i AccelerationGrid::ComputeParticleIndex(Particle *p)
 	{
@@ -171,7 +174,7 @@ namespace Physics
 		return 45* (h- r)/ (M_PI* pow(h, 6));
 	}
 
-	LookupTable<float, 2, 10> *poly6_kernel_lookup_table;
+	
 	float Poly6Kernel_Oracle(float input[2])
 	{
 		return Poly6Kernel(input[0], input[1]);
@@ -182,15 +185,6 @@ namespace Physics
 		float bar= poly6_kernel_lookup_table->Lookup(MakeFVector2f(r, h));
 
 		return bar;
-	}
-
-	void InitializeLookups()
-	{
-		{
-			FVector2f low= MakeFVector2f(0.0f, 1.0f);
-			FVector2f high= MakeFVector2f(1.0f, 1.0f);
-			poly6_kernel_lookup_table= new LookupTable<float, 2, 10>(Poly6Kernel_Oracle, low, high);
-		}
 	}
 
 	void FreeLookups()
@@ -351,6 +345,15 @@ namespace Physics
 				particles[i]->Step(total_time_step/ step_count);
 
 			foo+= total_time_step/ step_count;
+		}
+	}
+
+	void InitializeLookups()
+	{
+		{
+			FVector2f low= MakeFVector2f(0.0f, 1.0f);
+			FVector2f high= MakeFVector2f(1.0f, 1.0f);
+			poly6_kernel_lookup_table= new Poly6LookupTable(Poly6Kernel_Oracle, low, high);
 		}
 	}
 

@@ -8,10 +8,11 @@
 template<int d, int resolution>
 struct FlattenIndexStruct 
 {
+	using shorter_t = int(&)[d-1];
+
 	static int FlattenIndex(int (&index)[d])
 	{
-		using shorter_t = int(&)[d-1];
-		return index[d- 1]* (int)pow(resolution, d- 1)+ Dumb<d-1, resolution>::FlattenIndex(reinterpret_cast<shorter_t>(index));
+		return index[d- 1]* (int)pow(resolution, d- 1)+ FlattenIndexStruct<d-1, resolution>::FlattenIndex(reinterpret_cast<shorter_t>(index));
 	}
 };
 
