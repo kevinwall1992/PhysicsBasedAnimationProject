@@ -66,7 +66,7 @@ struct FVector
 		FVector<T, d> c;
 
 		for(int i= 0; i< d; i++)
-			c[i]= (*this)[i]+ b[i];
+			c.v[i]= this->v[i]+ b.v[i];
 
 		return c;
 	}
@@ -74,7 +74,7 @@ struct FVector
 	FVector<T, d> & operator+=(const FVector<T, d> &b)
 	{
 		for(int i= 0; i< d; i++)
-			(*this)[i]= (T)((*this)[i]+ b[i]);
+			this->v[i]= (T)(this->v[i]+ b.v[i]);
 
 		return *this;
 	}
@@ -84,7 +84,7 @@ struct FVector
 		FVector<T, d> c;
 
 		for(int i= 0; i< d; i++)
-			c[i]= (*this)[i]- b[i];
+			c.v[i]= this->v[i]- b.v[i];
 
 		return c;
 	}
@@ -92,7 +92,7 @@ struct FVector
 	FVector<T, d> & operator-=(const FVector<T, d> &b)
 	{
 		for(int i= 0; i< d; i++)
-			(*this)[i]= (T)((*this)[i]- b[i]);
+			this->v[i]= (T)(this->v[i]- b.v[i]);
 
 		return *this;
 	}
@@ -102,7 +102,7 @@ struct FVector
 		FVector<T, d> c;
 
 		for(int i= 0; i< d; i++)
-			c[i]= (*this)[i]* b[i];
+			c.v[i]= this->v[i]* b.v[i];
 
 		return c;
 	}
@@ -113,7 +113,7 @@ struct FVector
 		FVector<T, d> c;
 
 		for(int i= 0; i< d; i++)
-			c[i]= (T)((*this)[i]* s);
+			c.v[i]= (T)(this->v[i]* s);
 
 		return c;
 	}
@@ -122,7 +122,7 @@ struct FVector
 	FVector<T, d> & operator*=(const U &s)
 	{
 		for(int i= 0; i< d; i++)
-			(*this)[i]= (T)((*this)[i]* s);
+			this->v[i]= (T)(this->v[i]* s);
 
 		return *this;
 	}
@@ -132,7 +132,7 @@ struct FVector
 		FVector<T, d> c;
 
 		for(int i= 0; i< d; i++)
-			c[i]= (*this)[i]/ b[i];
+			c.v[i]= this->v[i]/ b.v[i];
 
 		return c;
 	}
@@ -143,7 +143,7 @@ struct FVector
 		FVector<T, d> c;
 
 		for(int i= 0; i< d; i++)
-			c[i]= (T)((*this)[i]/ s);
+			c.v[i]= (T)(this->v[i]/ s);
 
 		return c;
 	}
@@ -152,7 +152,7 @@ struct FVector
 	FVector<T, d> & operator/=(const U &s)
 	{
 		for(int i= 0; i< d; i++)
-			(*this)[i]= (T)((*this)[i]/ s);
+			this->v[i]= (T)(this->v[i]/ s);
 
 		return *this;
 	}
@@ -161,7 +161,7 @@ struct FVector
 	{
 		float sum= 0;
 		for(int i= 0; i< d; i++)
-			sum+= (float)((*this)[i]* (*this)[i]);
+			sum+= (float)(this->v[i]* this->v[i]);
 
 		return sum;
 	}
@@ -197,19 +197,19 @@ struct FVector
 		FVector<T, d> c;
 
 		for(int i= 0; i< d; i++)
-			c[i]= (T)abs((*this)[i]);
+			c.v[i]= (T)abs(this->v[i]);
 	}
 
 	void Absolutize()
 	{
 		for(int i= 0; i< d; i++)
-			(*this)[i]= (T)abs((*this)[i]);
+			this->v[i]= (T)abs(this->v[i]);
 	}
 
 	void ZeroOut()
 	{
 		for(int i= 0; i< d; i++)
-			(*this)[i]= (T)0;
+			this->v[i]= (T)0;
 	}
 };
 
