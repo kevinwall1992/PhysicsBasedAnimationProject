@@ -60,8 +60,8 @@ int main (int argument_count, char *arguments[])
 		{
 			std::cout << "FC: " << frames << " FPS: " << 1/ (frame_time_total/ frame_wait) << " Frames: " << total_frames << std::endl;
 			
-			if(false)
-			if(total_frames> 960)
+			//if(false)
+			if(total_frames> 2060)
 			{
 				std::cout << "total time: " << total_time;
 				//SDL_Delay(5000);
