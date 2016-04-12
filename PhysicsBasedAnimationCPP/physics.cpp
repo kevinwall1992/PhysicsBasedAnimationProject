@@ -177,9 +177,9 @@ namespace Physics
 	}
 
 	
-	float Poly6Kernel_Oracle(float input[2])
+	float Poly6Kernel_Oracle(FVector2f input_vector)
 	{
-		return Poly6Kernel(input[0], input[1]);
+		return Poly6Kernel(input_vector.v[0], input_vector.v[1]);
 	}
 	float Poly6Kernel_Lookup(float r, float h)
 	{

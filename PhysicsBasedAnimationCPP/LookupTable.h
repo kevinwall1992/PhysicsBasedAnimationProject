@@ -125,7 +125,7 @@ class LookupTable
 	}
 
 public:
-	typedef T OracleFunction(float[d]);
+	typedef T OracleFunction(FVector<float, d>);
 
 	LookupTable(OracleFunction Oracle, FVector<float, d> low, FVector<float, d> high)
 	{
@@ -150,7 +150,7 @@ public:
 
 		table= new T[flattened_max_index+ 1];
 		for(int i= 0; i< flattened_max_index; i++)
-			table[i]= Oracle(GenerateInputVector(i).v);
+			table[i]= Oracle(GenerateInputVector(i));
 	}
 
 	~LookupTable()
