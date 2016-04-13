@@ -111,6 +111,9 @@ class LookupTable
 
 	T *table;//test out having this be float pointers. Takes 2x memory but then we don't have to compute values unless needed
 
+	typedef T OracleFunction(FVector<float, d>);
+	OracleFunction *Oracle;
+
 	FVector<float, d> GenerateInputVector(int flattened_index)
 	{
 		int index[d];
@@ -125,7 +128,7 @@ class LookupTable
 	}
 
 public:
-	typedef T OracleFunction(FVector<float, d>);
+	
 
 	LookupTable(OracleFunction Oracle, FVector<float, d> low, FVector<float, d> high)
 	{
@@ -138,19 +141,21 @@ public:
 		for(int i= 0; i< d; i++)
 			this->float_resolution[i]= (float)resolution[i];
 
+		this->Oracle= Oracle;
+
 
 		int max_index[d];
 		for(int i= 0; i< d; i++)
 		{
 			max_index[i]= resolution[i]- 1;
-			max_vector.v[i]= max_index[i]- 0.000001f;
+			max_vector.v[i]= resolution[i]- 0.000001f;
 		}
 
 		int flattened_max_index= FlattenIndex<d, resolution>(max_index);
 
 		table= new T[flattened_max_index+ 1];
-		for(int i= 0; i< flattened_max_index; i++)
-			table[i]= Oracle(GenerateInputVector(i));
+		for(int i= 0; i<= flattened_max_index; i++)
+ 			table[i]= Oracle(GenerateInputVector(i));
 	}
 
 	~LookupTable()
@@ -161,6 +166,21 @@ public:
 
 	T Lookup(FVector<float, d> input_vector)
 	{
+		//return Oracle(input_vector);
+
+		bool outside_domain= false;
+		for(int i= 0; i< d; i++)//may be better to use template-foo to unroll this
+		{
+			if(!(input_vector[i]< low[i] || input_vector[i]> high[i])); else
+			{
+				outside_domain= true;
+				break;
+			}
+		}
+		if(!outside_domain); else
+			return Oracle(input_vector);
+
+		FVector<float, d> foo= input_vector;
 		input_vector= ((input_vector- low)/ range)* max_vector;
 
 		int index[d];

@@ -11,9 +11,12 @@ namespace Physics
 	ParticlePhysicsSystem *particle_physics_system;
 
 	const int poly6_kernel_sampling_resolution[2]= {10, 1};
+	const int compute_force_sampling_resolution[6]= {4, 4, 4, 6, 6, 1};
 
 	typedef LookupTable<float, 2, poly6_kernel_sampling_resolution> Poly6LookupTable;
 	Poly6LookupTable *poly6_kernel_lookup_table;
+	typedef LookupTable<FVector2f, 6, compute_force_sampling_resolution> ComputeForceLookupTable;
+	ComputeForceLookupTable *compute_force_lookup_table;
 
 
 	FVector2i AccelerationGrid::ComputeParticleIndex(Particle *p)
@@ -183,10 +186,7 @@ namespace Physics
 	}
 	float Poly6Kernel_Lookup(float r, float h)
 	{
-		float foo= Poly6Kernel(r, h);
-		float bar= poly6_kernel_lookup_table->Lookup(MakeFVector2f(r, h));
-
-		return bar;
+		return poly6_kernel_lookup_table->Lookup(MakeFVector2f(r, h));
 	}
 
 	void FreeLookups()
@@ -210,9 +210,50 @@ namespace Physics
 		}
 	}
 
+	//Could get better direction sampling by using angle instead of displacement
+	//Same for relative velocity
+	FVector2f ComputeForce_Oracle(FVector<float, 6> input_vector)
+	{
+		FVector2f force;
+
+		FVector2f displacement;
+		displacement[0]= input_vector[0];
+		displacement[1]= input_vector[1];
+		float pressure= input_vector[2];
+		FVector2f relative_velocity;
+		relative_velocity[0]= input_vector[3];
+		relative_velocity[1]= input_vector[4];
+		float viscosity= input_vector[5];
+
+		FVector2f attraction_vector= displacement.Normalized();
+		float distance= min(pressure_radius, displacement.Magnitude());//this is because of grid sampling issues
+		float pressure_magnitude= max(0.0f, pressure* (SpikyKernel_Derivative(distance, pressure_radius)/ -1));
+		float viscosity_magnitude= min(0.0f, (viscosity* ViscosityKernel_SecondDerivative(distance, viscosity_radius)* -1));
+		FVector2f viscosity_force= relative_velocity* viscosity_magnitude;
+
+		force= (attraction_vector* pressure_magnitude)+ viscosity_force;
+
+		return force;
+	}
+
+	FVector2f ComputeForce_Lookup(FVector2f displacement, float pressure, FVector2f relative_velocity, float viscosity)
+	{
+		FVector<float, 6> input_vector;
+		input_vector[0]= displacement[0];
+		input_vector[1]= displacement[1];
+		input_vector[2]= pressure;
+		input_vector[3]= relative_velocity[0];
+		input_vector[4]= relative_velocity[1];
+		input_vector[5]= viscosity;
+
+		return compute_force_lookup_table->Lookup(input_vector);
+	}
+
 	float foo= 0;
 	void ParticlePhysicsSystem::ComputeAcceleration(Particle *p)
 	{
+		static float max_pressure= 0.0f;
+
 		//if(p->static_)
 		//	return;
 
@@ -229,7 +270,7 @@ namespace Physics
 			if(n== p)
 				continue;
 
-			FVector2f partner_force;
+			/*FVector2f partner_force;
 			partner_force.ZeroOut();
 
 			float weight= n->mass / n->density;
@@ -237,7 +278,8 @@ namespace Physics
 
 			float distance= p->position.Distance(n->position);
 			//Pressure
-			float pressure_magnitude= (p->pressure+ n->pressure)* (weight* SpikyKernel_Derivative(distance, pressure_radius)/ -2);
+			//max_pressure= max(max_pressure, (p->pressure+ n->pressure)/ 2);
+			float pressure_magnitude= max(0.0f, (p->pressure+ n->pressure)* (weight* SpikyKernel_Derivative(distance, pressure_radius)/ -2));
 			//if(pressure_magnitude< 0)
 			//	cout << "Pressure is negative!";
 			//else
@@ -251,6 +293,23 @@ namespace Physics
 			force+= partner_force;
 			n->acceleration+= partner_force/ (n->mass* -1);
 
+			p->force_partners[i]= nullptr;
+			for(unsigned int j= 0; j< n->force_partners.size(); j++)
+			{
+				if(n->force_partners[j]== p)
+				{
+					n->force_partners[j]= nullptr;
+					break;
+				}
+			}*/
+
+			FVector2f displacement= p->position- n->position;
+			float pressure= (p->pressure+ n->pressure)/ 2;
+			FVector2f relative_velocity= p->velocity- n->velocity;
+			FVector2f unweighted_partner_force= ComputeForce_Lookup(displacement, pressure, relative_velocity, p->viscosity);
+			force+= unweighted_partner_force* (n->mass / n->density);
+			
+			n->acceleration+= unweighted_partner_force* ((n->mass / n->density)/ (n->mass* -1));//NOT CORRECT, but error is present in control (should be weighted by p's weight)
 			p->force_partners[i]= nullptr;
 			for(unsigned int j= 0; j< n->force_partners.size(); j++)
 			{
@@ -273,6 +332,8 @@ namespace Physics
 		{
 			p->static_= false;
 		}
+		//if(foo< 100);else
+		//	cout << max_pressure << std::endl;
 
 		if(p->mass< 1.5f)
 		{
@@ -353,9 +414,14 @@ namespace Physics
 	void InitializeLookups()
 	{
 		{
+			FVector<float, 6> low; low[0]=-0.9999f; low[1]= -0.9999; low[2]= 0; low[3]= -6.9999f; low[4]= -6.9999f; low[5]= 0.45f;
+			FVector<float, 6> high; high[0]= 1; high[1]= 1; high[2]= 3.5f; high[3]= 7; high[4]= 7; high[5]= 0.55f;
+			compute_force_lookup_table= new ComputeForceLookupTable(ComputeForce_Oracle, low, high);
+		}
+
+		{
 			FVector2f low= MakeFVector2f(0.0f, 1.0f);
 			FVector2f high= MakeFVector2f(1.0f, 1.0f);
-			FVector2i resolution= MakeFVector2i(10, 1);
 			poly6_kernel_lookup_table= new Poly6LookupTable(Poly6Kernel_Oracle, low, high);
 		}
 	}
