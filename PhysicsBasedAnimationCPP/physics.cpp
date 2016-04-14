@@ -261,7 +261,7 @@ namespace Physics
 		FVector2f force;//you could try static as an experiment
 		force.ZeroOut();
 
-		//float weight= p->mass / p->density;
+		float weight= p->mass / p->density;
 		for(unsigned int i= 0; i< p->force_partners.size(); i++)
 		{
 			if(p->force_partners[i]== nullptr)
@@ -274,21 +274,21 @@ namespace Physics
 			FVector2f partner_force;
 			partner_force.ZeroOut();
 
-			float weight= n->mass / n->density;
+			float partner_weight= n->mass / n->density;
 			FVector2f attraction_vector= (p->position- n->position).Normalized();//curious whether this creates two vectors or one
 
 			float distance= p->position.Distance(n->position);
 			//Pressure
 			//max_pressure= max(max_pressure, (p->pressure+ n->pressure)/ 2);
-			float pressure_magnitude= max(0.0f, (p->pressure+ n->pressure)* (weight* SpikyKernel_Derivative(distance, pressure_radius)/ -2));
+			float pressure_magnitude= max(0.0f, (p->pressure+ n->pressure)* (SpikyKernel_Derivative(distance, pressure_radius)/ -2));
 			partner_force+= (attraction_vector* (pressure_magnitude));
 
 			//Viscosity
-			partner_force+= (p->velocity- n->velocity)* (weight* p->viscosity* ViscosityKernel_SecondDerivative(distance, viscosity_radius)* -1);
+			partner_force+= (p->velocity- n->velocity)* (p->viscosity* ViscosityKernel_SecondDerivative(distance, viscosity_radius)* -1);
 
 
-			force+= partner_force;
-			n->acceleration+= partner_force/ -n->mass;
+			force+= partner_force* partner_weight;
+			n->acceleration+= partner_force*(-weight/ n->mass);
 
 			p->force_partners[i]= nullptr;
 			for(unsigned int j= 0; j< n->force_partners.size(); j++)
