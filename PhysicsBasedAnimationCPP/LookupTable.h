@@ -197,8 +197,8 @@ public:
 
 	T Lookup(FVector<float, d> input_vector)
 	{
-		if(RangeTest<d, d- 1>(input_vector, low, high)); else
-			return Oracle(input_vector);
+		//if(RangeTest<d, d- 1>(input_vector, low, high)); else
+		//	return Oracle(input_vector);
 
 		//return Oracle(input_vector);
 

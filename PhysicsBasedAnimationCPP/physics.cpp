@@ -11,12 +11,12 @@ namespace Physics
 	ParticlePhysicsSystem *particle_physics_system;
 
 	const int poly6_kernel_sampling_resolution[2]= {10, 1};
-	const int compute_force_sampling_resolution[6]= {4, 4, 8, 6, 6, 1};
+	//const int compute_force_sampling_resolution[6]= {4, 4, 8, 6, 6, 1};
 
 	typedef LookupTable<float, 2, poly6_kernel_sampling_resolution> Poly6LookupTable;
 	Poly6LookupTable *poly6_kernel_lookup_table;
-	typedef LookupTable<FVector2f, 6, compute_force_sampling_resolution> ComputeForceLookupTable;
-	ComputeForceLookupTable *compute_force_lookup_table;
+	//typedef LookupTable<FVector2f, 6, compute_force_sampling_resolution> ComputeForceLookupTable;
+	//ComputeForceLookupTable *compute_force_lookup_table;
 
 
 	FVector2i AccelerationGrid::ComputeParticleIndex(Particle *p)
@@ -212,7 +212,7 @@ namespace Physics
 
 	//Could get better direction sampling by using angle instead of displacement
 	//Same for relative velocity
-	FVector2f ComputeForce_Oracle(FVector<float, 6> input_vector)
+	/*FVector2f ComputeForce_Oracle(FVector<float, 6> input_vector)
 	{
 		FVector2f force;
 
@@ -247,7 +247,7 @@ namespace Physics
 		input_vector[5]= viscosity;
 
 		return compute_force_lookup_table->Lookup(input_vector);
-	}
+	}*/
 
 	float foo= 0;
 	void ParticlePhysicsSystem::ComputeAcceleration(Particle *p)
@@ -261,6 +261,7 @@ namespace Physics
 		FVector2f force;//you could try static as an experiment
 		force.ZeroOut();
 
+		//float weight= p->mass / p->density;
 		for(unsigned int i= 0; i< p->force_partners.size(); i++)
 		{
 			if(p->force_partners[i]== nullptr)
@@ -270,7 +271,7 @@ namespace Physics
 			if(n== p)
 				continue;
 
-			/*FVector2f partner_force;
+			FVector2f partner_force;
 			partner_force.ZeroOut();
 
 			float weight= n->mass / n->density;
@@ -280,36 +281,15 @@ namespace Physics
 			//Pressure
 			//max_pressure= max(max_pressure, (p->pressure+ n->pressure)/ 2);
 			float pressure_magnitude= max(0.0f, (p->pressure+ n->pressure)* (weight* SpikyKernel_Derivative(distance, pressure_radius)/ -2));
-			//if(pressure_magnitude< 0)
-			//	cout << "Pressure is negative!";
-			//else
-			//	cout << "Pressure is positive";
 			partner_force+= (attraction_vector* (pressure_magnitude));
 
 			//Viscosity
-			partner_force+= (p->velocity- n->velocity)* (p->viscosity* weight* ViscosityKernel_SecondDerivative(distance, viscosity_radius)* -1);
+			partner_force+= (p->velocity- n->velocity)* (weight* p->viscosity* ViscosityKernel_SecondDerivative(distance, viscosity_radius)* -1);
 
 
 			force+= partner_force;
-			n->acceleration+= partner_force/ (n->mass* -1);
+			n->acceleration+= partner_force/ -n->mass;
 
-			p->force_partners[i]= nullptr;
-			for(unsigned int j= 0; j< n->force_partners.size(); j++)
-			{
-				if(n->force_partners[j]== p)
-				{
-					n->force_partners[j]= nullptr;
-					break;
-				}
-			}*/
-
-			FVector2f displacement= p->position- n->position;
-			float pressure= (p->pressure+ n->pressure)/ 2;
-			FVector2f relative_velocity= p->velocity- n->velocity;
-			FVector2f unweighted_partner_force= ComputeForce_Lookup(displacement, pressure, relative_velocity, p->viscosity);
-			force+= unweighted_partner_force* (n->mass / n->density);
-			
-			n->acceleration+= unweighted_partner_force* ((n->mass / n->density)/ (n->mass* -1));//NOT CORRECT, but error is present in control (should be weighted by p's weight)
 			p->force_partners[i]= nullptr;
 			for(unsigned int j= 0; j< n->force_partners.size(); j++)
 			{
@@ -414,9 +394,9 @@ namespace Physics
 	void InitializeLookups()
 	{
 		{
-			FVector<float, 6> low; low[0]=-0.9999f; low[1]= -0.9999; low[2]= 0; low[3]= -6.9999f; low[4]= -6.9999f; low[5]= 0.45f;
-			FVector<float, 6> high; high[0]= 1; high[1]= 1; high[2]= 10.5f; high[3]= 7; high[4]= 7; high[5]= 0.55f;
-			compute_force_lookup_table= new ComputeForceLookupTable(ComputeForce_Oracle, low, high);
+			//FVector<float, 6> low; low[0]=-0.9999f; low[1]= -0.9999; low[2]= 0; low[3]= -6.9999f; low[4]= -6.9999f; low[5]= 0.45f;
+			//FVector<float, 6> high; high[0]= 1; high[1]= 1; high[2]= 10.5f; high[3]= 7; high[4]= 7; high[5]= 0.55f;
+			//compute_force_lookup_table= new ComputeForceLookupTable(ComputeForce_Oracle, low, high);
 		}
 
 		{
