@@ -168,7 +168,7 @@ public:
 	{
 		//return Oracle(input_vector);
 
-		bool outside_domain= false;
+		/*bool outside_domain= false;
 		for(int i= 0; i< d; i++)//may be better to use template-foo to unroll this
 		{
 			if(!(input_vector[i]< low[i] || input_vector[i]> high[i])); else
@@ -178,7 +178,7 @@ public:
 			}
 		}
 		if(!outside_domain); else
-			return Oracle(input_vector);
+			return Oracle(input_vector);*/
 
 		FVector<float, d> foo= input_vector;
 		input_vector= ((input_vector- low)/ range)* max_vector;

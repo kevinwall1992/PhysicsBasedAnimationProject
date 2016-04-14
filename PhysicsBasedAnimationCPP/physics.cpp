@@ -11,7 +11,7 @@ namespace Physics
 	ParticlePhysicsSystem *particle_physics_system;
 
 	const int poly6_kernel_sampling_resolution[2]= {10, 1};
-	const int compute_force_sampling_resolution[6]= {4, 4, 4, 6, 6, 1};
+	const int compute_force_sampling_resolution[6]= {4, 4, 8, 6, 6, 1};
 
 	typedef LookupTable<float, 2, poly6_kernel_sampling_resolution> Poly6LookupTable;
 	Poly6LookupTable *poly6_kernel_lookup_table;
@@ -415,7 +415,7 @@ namespace Physics
 	{
 		{
 			FVector<float, 6> low; low[0]=-0.9999f; low[1]= -0.9999; low[2]= 0; low[3]= -6.9999f; low[4]= -6.9999f; low[5]= 0.45f;
-			FVector<float, 6> high; high[0]= 1; high[1]= 1; high[2]= 3.5f; high[3]= 7; high[4]= 7; high[5]= 0.55f;
+			FVector<float, 6> high; high[0]= 1; high[1]= 1; high[2]= 10.5f; high[3]= 7; high[4]= 7; high[5]= 0.55f;
 			compute_force_lookup_table= new ComputeForceLookupTable(ComputeForce_Oracle, low, high);
 		}
 
