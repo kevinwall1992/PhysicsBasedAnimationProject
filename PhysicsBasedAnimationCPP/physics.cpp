@@ -317,7 +317,7 @@ namespace Physics
 		force+= (center- p->position).Normalized()* 0.05f;
 
 		//Friction
-		//force+= p->velocity* -0.05f;
+		//force+= p->velocity* -0.35f;
 
 		//Test
 		if(foo> 32.0f && foo< 32.3f)
@@ -343,9 +343,9 @@ namespace Physics
 	{
 		acceleration_grid= new AccelerationGrid(MakeFVector2f(-100.0f, -100.0f), 1.0f, 200);
 
-		for(int i= -25; i<= 25; i++)
+		for(int i= -45; i<= 45; i++)
 		{
-			for(int j= -25; j<= 25; j++)
+			for(int j= -45; j<= 45; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 1.75f, j/ 1.75f));
 				particles.push_back(p);
@@ -356,11 +356,11 @@ namespace Physics
 		//if(false)
 		for(int i= -3; i<= 1; i++)
 		{
-			for(int j= 120; j<= 160; j++)
+			for(int j= 80; j<= 160; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
 				p->static_= true;
-				p->velocity= MakeFVector2f(0.0f, -5.0f);
+				p->velocity= MakeFVector2f(0.0f, -10.0f);
 				p->mass= 1.0f;
 				p->gas_constant/= p->mass;
 				p->rest_density/= p->mass;
