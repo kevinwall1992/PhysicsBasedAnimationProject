@@ -11,10 +11,13 @@ namespace Physics
 	ParticlePhysicsSystem *particle_physics_system;
 
 	const int poly6_kernel_sampling_resolution[2]= {10, 1};
+	const int spiky_kernel_derivative_sampling_resolution[2]= {10, 1};
 	//const int compute_force_sampling_resolution[6]= {4, 4, 8, 6, 6, 1};
 
 	typedef LookupTable<float, 2, poly6_kernel_sampling_resolution> Poly6LookupTable;
 	Poly6LookupTable *poly6_kernel_lookup_table;
+	typedef LookupTable<float, 2, spiky_kernel_derivative_sampling_resolution> SpikyDerivativeLookupTable;
+	SpikyDerivativeLookupTable *spiky_kernel_derivative_lookup_table;
 	//typedef LookupTable<FVector2f, 6, compute_force_sampling_resolution> ComputeForceLookupTable;
 	//ComputeForceLookupTable *compute_force_lookup_table;
 
@@ -189,6 +192,15 @@ namespace Physics
 		return poly6_kernel_lookup_table->Lookup(MakeFVector2f(r, h));
 	}
 
+	float SpikyKernel_Derivative_Oracle(FVector2f input_vector)
+	{
+		return SpikyKernel_Derivative(input_vector.v[0], input_vector.v[1]);
+	}
+	float SpikyKernel_Derivative_Lookup(float r, float h)
+	{
+		return spiky_kernel_derivative_lookup_table->Lookup(MakeFVector2f(r, h));
+	}
+
 	void FreeLookups()
 	{
 		delete poly6_kernel_lookup_table;
@@ -335,7 +347,7 @@ namespace Physics
 		{
 			for(int j= -25; j<= 25; j++)
 			{
-				Particle *p= new Particle(MakeFVector2f(i/ 1.6f, j/ 1.6f));
+				Particle *p= new Particle(MakeFVector2f(i/ 1.75f, j/ 1.75f));
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 			}
@@ -403,6 +415,12 @@ namespace Physics
 			FVector2f low= MakeFVector2f(0.0f, 1.0f);
 			FVector2f high= MakeFVector2f(1.0f, 1.0f);
 			poly6_kernel_lookup_table= new Poly6LookupTable(Poly6Kernel_Oracle, low, high);
+		}
+
+		{
+			FVector2f low= MakeFVector2f(0.0f, 1.0f);
+			FVector2f high= MakeFVector2f(1.0f, 1.0f);
+			spiky_kernel_derivative_lookup_table= new SpikyDerivativeLookupTable(SpikyKernel_Derivative_Oracle, low, high);
 		}
 	}
 
