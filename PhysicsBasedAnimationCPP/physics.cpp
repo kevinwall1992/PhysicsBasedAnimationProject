@@ -343,9 +343,9 @@ namespace Physics
 	{
 		acceleration_grid= new AccelerationGrid(MakeFVector2f(-100.0f, -100.0f), 1.0f, 200);
 
-		for(int i= -45; i<= 45; i++)
+		for(int i= -20; i<= 20; i++)
 		{
-			for(int j= -45; j<= 45; j++)
+			for(int j= -20; j<= 20; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 1.75f, j/ 1.75f));
 				particles.push_back(p);
@@ -356,11 +356,11 @@ namespace Physics
 		//if(false)
 		for(int i= -3; i<= 1; i++)
 		{
-			for(int j= 80; j<= 160; j++)
+			for(int j= 70; j<= 180; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
 				p->static_= true;
-				p->velocity= MakeFVector2f(0.0f, -10.0f);
+				p->velocity= MakeFVector2f(0.0f, -4.0f);
 				p->mass= 1.0f;
 				p->gas_constant/= p->mass;
 				p->rest_density/= p->mass;
