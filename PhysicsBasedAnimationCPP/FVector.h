@@ -35,6 +35,12 @@ struct FVector
 
 	}
 
+	void Set(T *array_)
+	{
+		for(int i= 0; i< d; i++)
+			this->v[i]= d[i];
+	}
+
 
 
 	/*void TakeValueOf(const FVector<T, d> &b)
