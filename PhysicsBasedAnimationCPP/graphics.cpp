@@ -30,6 +30,7 @@ namespace Graphics
 									  SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 		current_screen_width= DEFAULT_SCREEN_WIDTH;
 		current_screen_height= DEFAULT_SCREEN_HEIGHT;
+		current_aspect_ratio = current_screen_width / (float)current_screen_height;
 
 		renderer = SDL_CreateRenderer(main_window, -1, 0);
 		opengl_context = SDL_GL_CreateContext(main_window);
@@ -40,7 +41,9 @@ namespace Graphics
 		glEnable(GL_TEXTURE_2D);
 		glPointSize(4);
 
-		glOrtho(-40, 40, -20, 20, 0, 100);
+		float world_width = 60.0f;
+		float world_height = world_width/ current_aspect_ratio;
+		glOrtho(-world_width, world_width, -world_height, world_height, 0, 100);
 	}
 
 	void Conclude()
