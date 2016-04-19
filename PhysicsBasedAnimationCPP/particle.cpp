@@ -13,7 +13,7 @@ Particle::Particle(FVector2f position_)
 	this->tension= 0.05f;
 	this->heat= 0.0f;
 
-	//this->foo= 0.0f;
+	this->foo= 0.0f;
 	this->normal.ZeroOut();
 
 	this->static_= false;

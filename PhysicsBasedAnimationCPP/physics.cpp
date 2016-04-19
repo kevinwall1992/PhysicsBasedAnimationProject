@@ -313,10 +313,13 @@ namespace Physics
 			color_field_laplacian_magnitude+= partner_weight* Poly6Kernel_SecondDerivative(distance);
 		}
 		float color_field_gradient_magnitude= color_field_gradient.Magnitude();
-		//p->foo= min(1.0f, color_field_gradient_magnitude/ 2.0f);
+		p->foo= 0.0f;
 		p->normal= color_field_gradient* -color_field_laplacian_magnitude;
-		if(color_field_gradient_magnitude> 0.25f)
+		if(color_field_gradient_magnitude> 0.05f)
+		{
+			p->foo= color_field_gradient_magnitude/ 2.0f;
 			force+= color_field_gradient* (-p->tension* color_field_laplacian_magnitude/ color_field_gradient_magnitude);
+		}
 
 		float weight= p->mass / p->density;
 		for(unsigned int i= 0; i< p->force_partners.size(); i++)
@@ -362,7 +365,7 @@ namespace Physics
 		force+= (center- p->position).Normalized()* 0.05f;
 
 		//Friction
-		force+= p->velocity* -0.0005f;
+		force+= p->velocity* -0.00025f;
 
 
 		//if(foo< 100);else
@@ -385,9 +388,9 @@ namespace Physics
 		acceleration_grid= new AccelerationGrid(MakeFVector2f(-100.0f, -100.0f), 1.0f, 200);
 
 		//if(false)
-		for(int i= -12; i<= 12; i++)
+		for(int i= -20; i<= 20; i++)
 		{
-			for(int j= -12; j<= 12; j++)
+			for(int j= -20; j<= 20; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.75f, j/ 2.75f));
 				if(i== -8 && j== -8)
@@ -398,9 +401,9 @@ namespace Physics
 		}
 
 		//if(false)
-		for(int i= -2; i<= 0; i++)
+		for(int i= -8; i<= 2; i++)
 		{
-			for(int j= 40; j<= 100; j++)
+			for(int j= 80; j<= 160; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
 				p->static_= true;

@@ -22,6 +22,7 @@ struct Particle
 	float tension;
 	float heat;
 
+	float foo;
 	FVector2f normal;
 
 	bool static_;
