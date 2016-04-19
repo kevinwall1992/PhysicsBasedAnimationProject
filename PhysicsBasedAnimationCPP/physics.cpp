@@ -385,11 +385,13 @@ namespace Physics
 		acceleration_grid= new AccelerationGrid(MakeFVector2f(-100.0f, -100.0f), 1.0f, 200);
 
 		//if(false)
-		for(int i= -15; i<= 15; i++)
+		for(int i= -12; i<= 12; i++)
 		{
-			for(int j= -15; j<= 15; j++)
+			for(int j= -12; j<= 12; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.75f, j/ 2.75f));
+				if(i== -8 && j== -8)
+					p->heat= 10.0f;
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 			}
@@ -398,7 +400,7 @@ namespace Physics
 		//if(false)
 		for(int i= -2; i<= 0; i++)
 		{
-			for(int j= 70; j<= 100; j++)
+			for(int j= 40; j<= 100; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
 				p->static_= true;
@@ -441,6 +443,22 @@ namespace Physics
 			for(unsigned int i= 0; i< particles.size(); i++)
 			{
 				ComputeAcceleration(particles[i]);
+
+				/*float heat= 0.0f;
+				float total= 0.0f;
+				float total_mass= 0.0f;
+				for (unsigned int j = 0; j < particles[i]->neighbors.size(); j++)
+				{
+					Particle *n= particles[i]->neighbors[j];
+
+					float foo= n->mass* Poly6Kernel(n->position.Distance(particles[i]->position));
+					total_mass+= n->mass;
+					total+= foo;
+
+					heat+= foo* n->heat;
+				}
+				heat/= total;
+				particles[i]->heat+= (particles[i]->mass/ total_mass)* (heat- particles[i]->heat);*/
 			}
 
 			for(unsigned int i= 0; i< particles.size(); i++)
