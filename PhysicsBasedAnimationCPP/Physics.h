@@ -69,7 +69,9 @@ namespace Physics
 
 	extern ParticlePhysicsSystem *particle_physics_system;//test making this not a pointer
 
-	extern const int poly6_kernel_sampling_resolution[2];
+	extern const int poly6_kernel_sampling_resolution[2];//make resolution 1
+	extern const int poly6_kernel_derivative_sampling_resolution[1];
+	extern const int poly6_kernel_second_derivative_sampling_resolution[1];
 	extern const int spiky_kernel_derivative_sampling_resolution[2];
 	//extern const int compute_force_sampling_resolution[6];
 

@@ -11,11 +11,17 @@ namespace Physics
 	ParticlePhysicsSystem *particle_physics_system;
 
 	const int poly6_kernel_sampling_resolution[2]= {10, 1};
+	const int poly6_kernel_derivative_sampling_resolution[1]= {10};
+	const int poly6_kernel_second_derivative_sampling_resolution[1]= {10};
 	const int spiky_kernel_derivative_sampling_resolution[2]= {10, 1};
 	//const int compute_force_sampling_resolution[6]= {4, 4, 8, 6, 6, 1};
 
 	typedef LookupTable<float, 1, poly6_kernel_sampling_resolution> Poly6LookupTable;
 	Poly6LookupTable *poly6_kernel_lookup_table;
+	typedef LookupTable<float, 1, poly6_kernel_derivative_sampling_resolution> Poly6DerivativeLookupTable;
+	Poly6DerivativeLookupTable *poly6_kernel_derivative_lookup_table;
+	typedef LookupTable<float, 1, poly6_kernel_second_derivative_sampling_resolution> Poly6SecondDerivativeLookupTable;
+	Poly6SecondDerivativeLookupTable *poly6_kernel_second_derivative_lookup_table;
 	typedef LookupTable<float, 1, spiky_kernel_derivative_sampling_resolution> SpikyDerivativeLookupTable;
 	SpikyDerivativeLookupTable *spiky_kernel_derivative_lookup_table;
 	//typedef LookupTable<FVector2f, 6, compute_force_sampling_resolution> ComputeForceLookupTable;
@@ -212,6 +218,30 @@ namespace Physics
 		return poly6_kernel_lookup_table->Lookup(input_vector);
 	}
 
+	float Poly6Kernel_Derivative_Oracle(FVector<float, 1> input_vector)
+	{
+		return Poly6Kernel_Derivative(input_vector.v[0]);
+	}
+	float Poly6Kernel_Derivative_Lookup(float r)
+	{
+		FVector<float, 1> input_vector;
+		input_vector[0]= r;
+
+		return poly6_kernel_derivative_lookup_table->Lookup(input_vector);
+	}
+
+	float Poly6Kernel_SecondDerivative_Oracle(FVector<float, 1> input_vector)
+	{
+		return Poly6Kernel_SecondDerivative(input_vector.v[0]);
+	}
+	float Poly6Kernel_SecondDerivative_Lookup(float r)
+	{
+		FVector<float, 1> input_vector;
+		input_vector[0]= r;
+
+		return poly6_kernel_second_derivative_lookup_table->Lookup(input_vector);
+	}
+
 	float SpikyKernel_Derivative_Oracle(FVector<float, 1> input_vector)
 	{
 		return SpikyKernel_Derivative(input_vector.v[0]);
@@ -325,7 +355,7 @@ namespace Physics
 
 			float partner_weight= n->mass/ n->density;
 			float distance= p->position.Distance(n->position);
-			color_field_laplacian_magnitude+= partner_weight* Poly6Kernel_SecondDerivative(distance);
+			color_field_laplacian_magnitude+= partner_weight* Poly6Kernel_SecondDerivative_Lookup(distance);
 
 			if(!(n== p)); else
 				continue;
@@ -334,7 +364,7 @@ namespace Physics
 
 			//can do less computation if we divide by distance, etc
 			FVector2f attraction_vector= (p->position- n->position).Normalized();//curious whether this creates two vectors or one
-			color_field_gradient+= attraction_vector* partner_weight* Poly6Kernel_Derivative(distance);
+			color_field_gradient+= attraction_vector* partner_weight* Poly6Kernel_Derivative_Lookup(distance);
 
 			if(p->force_partners[i]== nullptr)
 				continue;
@@ -497,6 +527,18 @@ namespace Physics
 			FVector<float, 1> low; low[0]= 0.0f;
 			FVector<float, 1> high; high[0]= 1.0f;
 			poly6_kernel_lookup_table= new Poly6LookupTable(Poly6Kernel_Oracle, low, high);
+		}
+
+		{
+			FVector<float, 1> low; low[0]= 0.0f;
+			FVector<float, 1> high; high[0]= 1.0f;
+			poly6_kernel_derivative_lookup_table= new Poly6DerivativeLookupTable(Poly6Kernel_Derivative_Oracle, low, high);
+		}
+
+		{
+			FVector<float, 1> low; low[0]= 0.0f;
+			FVector<float, 1> high; high[0]= 1.0f;
+			poly6_kernel_second_derivative_lookup_table= new Poly6SecondDerivativeLookupTable(Poly6Kernel_SecondDerivative_Oracle, low, high);
 		}
 
 		{
