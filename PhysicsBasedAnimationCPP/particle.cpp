@@ -13,7 +13,7 @@ Particle::Particle(FVector2f position_)
 	this->base_viscosity= 4.05f;
 	this->tension= 0.05f;
 
-	this->conduction= 0.1f;
+	this->conduction= 0.2f;
 	this->heat= 0.0f;
 	this->heat_delta= 0.0f;
 
@@ -39,5 +39,5 @@ void Particle::Step(float t)
 
 float Particle::GetViscosity()
 {
-	return (0.2f* base_viscosity)+ (0.8f* base_viscosity* (1- min(1.0f, heat/ 10.0f)));
+	return (0.05f* base_viscosity)+ (0.95f* base_viscosity* (1- min(1.0f, heat/ 10.0f)));
 }

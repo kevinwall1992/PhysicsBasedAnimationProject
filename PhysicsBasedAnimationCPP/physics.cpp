@@ -444,13 +444,13 @@ namespace Physics
 		}
 
 		//if(false)
-		for(int i= -2; i<= -2; i++)
+		for(int i= -14; i<= -10; i++)
 		{
 			for(int j= 50; j<= 260; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
 				p->static_= true;
-				p->velocity= MakeFVector2f(0.0f, 0.0f);
+				p->velocity= MakeFVector2f(-0.15f, -3.0f);
 				p->mass= 1.0f;
 				p->gas_constant/= p->mass;
 				p->rest_density/= p->mass;
@@ -460,7 +460,7 @@ namespace Physics
 			}
 		}
 
-		//if(false)
+		if(false)
 		for(int i= 2; i<= 2; i++)
 		{
 			for(int j= -260; j<= -50; j++)
