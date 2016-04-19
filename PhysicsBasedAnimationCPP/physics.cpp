@@ -299,7 +299,7 @@ namespace Physics
 		FVector2f color_field_gradient;
 		color_field_gradient.ZeroOut();
 		float color_field_laplacian_magnitude= 0;
-		for(unsigned int i= 0; i< p->neighbors.size(); i++)
+		/*for(unsigned int i= 0; i< p->neighbors.size(); i++)
 		{
 			Particle *n= p->neighbors[i];
 
@@ -312,32 +312,38 @@ namespace Physics
 			}
 			color_field_laplacian_magnitude+= partner_weight* Poly6Kernel_SecondDerivative(distance);
 		}
-		float color_field_gradient_magnitude= color_field_gradient.Magnitude();
-		p->foo= 0.0f;
-		p->normal= color_field_gradient* -color_field_laplacian_magnitude;
-		if(color_field_gradient_magnitude> 0.05f)
-		{
-			p->foo= color_field_gradient_magnitude/ 2.0f;
-			force+= color_field_gradient* (-p->tension* color_field_laplacian_magnitude/ color_field_gradient_magnitude);
-		}
+		*/
 
 		float weight= p->mass / p->density;
 		for(unsigned int i= 0; i< p->force_partners.size(); i++)
 		{
+			//non-symmetric
+
+			Particle *n= p->neighbors[i];
+
+			//including self
+
+			float partner_weight= n->mass/ n->density;
+			float distance= p->position.Distance(n->position);
+			color_field_laplacian_magnitude+= partner_weight* Poly6Kernel_SecondDerivative(distance);
+
+			if(!(n== p)); else
+				continue;
+
+			//exlcuding self
+
+			//can do less computation if we divide by distance, etc
+			FVector2f attraction_vector= (p->position- n->position).Normalized();//curious whether this creates two vectors or one
+			color_field_gradient+= attraction_vector* partner_weight* Poly6Kernel_Derivative(distance);
+
 			if(p->force_partners[i]== nullptr)
 				continue;
 
-			Particle *n= p->force_partners[i];
-			if(!(n== p)); else
-				continue;
+			//symmetric
 
 			FVector2f partner_force;
 			partner_force.ZeroOut();
 
-			float partner_weight= n->mass/ n->density;
-			FVector2f attraction_vector= (p->position- n->position).Normalized();//curious whether this creates two vectors or one
-
-			float distance= p->position.Distance(n->position);
 			//Pressure
 			//max_pressure= max(max_pressure, (p->pressure+ n->pressure)/ 2);
 			float pressure_magnitude= max(0.0f, (p->pressure+ n->pressure)* (SpikyKernel_Derivative(distance)/ -2));
@@ -359,6 +365,14 @@ namespace Physics
 					break;
 				}
 			}
+		}
+		float color_field_gradient_magnitude= color_field_gradient.Magnitude();
+		p->foo= 0.0f;
+		p->normal= color_field_gradient* -color_field_laplacian_magnitude;
+		if(color_field_gradient_magnitude> 0.05f)
+		{
+			p->foo= color_field_gradient_magnitude/ 2.0f;
+			force+= color_field_gradient* (-p->tension* color_field_laplacian_magnitude/ color_field_gradient_magnitude);
 		}
 
 		//Gravity
