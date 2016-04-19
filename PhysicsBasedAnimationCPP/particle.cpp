@@ -1,4 +1,5 @@
 #include "Particle.h"
+#include <minmax.h>
 
 Particle::Particle(FVector2f position_)
 {
@@ -9,9 +10,12 @@ Particle::Particle(FVector2f position_)
 	this->mass= 1.0f;
 	this->gas_constant= 0.2;
 	this->rest_density= 2.0f;
-	this->viscosity= 0.05f;
+	this->base_viscosity= 4.05f;
 	this->tension= 0.05f;
+
+	this->conduction= 0.1f;
 	this->heat= 0.0f;
+	this->heat_delta= 0.0f;
 
 	this->foo= 0.0f;
 	this->normal.ZeroOut();
@@ -25,7 +29,15 @@ void Particle::Step(float t)
 	{
 		position+= (velocity* t);
 		velocity+= (acceleration* t);
+		
+		heat+= heat_delta;
 	}
 
 	acceleration.ZeroOut();
+	heat_delta= 0.0f;
+}
+
+float Particle::GetViscosity()
+{
+	return (0.2f* base_viscosity)+ (0.8f* base_viscosity* (1- min(1.0f, heat/ 10.0f)));
 }

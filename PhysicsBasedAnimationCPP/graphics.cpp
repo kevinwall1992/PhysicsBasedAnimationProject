@@ -83,7 +83,7 @@ namespace Graphics
 			float heat_modifier= 1.0f- particles[i]->heat/ 10.0f;
 
 			//glColor3f(0.0f, magnitude* (normal[0]+ 1)/ 2, magnitude* (normal[1]+ 1)/ 2);
-			//glColor3f(1.0f, heat_modifier* 1.0f, heat_modifier* 1.0f);
+			glColor3f(1.0f, heat_modifier* 1.0f, heat_modifier* 1.0f);
 			//glColor3f(particles[i]->foo* 1.0f, particles[i]->foo* 1.0f, particles[i]->foo* 1.0f);
 			
 			glVertex3f(particles[i]->position[0], particles[i]->position[1], 0.0f);

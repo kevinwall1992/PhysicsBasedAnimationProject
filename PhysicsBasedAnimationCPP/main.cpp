@@ -60,13 +60,19 @@ int main (int argument_count, char *arguments[])
 		{
 			std::cout << "FC: " << frames << " FPS: " << 1/ (frame_time_total/ frame_wait) << " Frames: " << total_frames << std::endl;
 			
-			//if(false)
+			if(false)
 			if(total_frames> 2060)
 			{
 				std::cout << "total time: " << total_time;
 				//SDL_Delay(5000);
 				break;
 			}
+
+			vector<Particle *> particles= Physics::particle_physics_system->GetParticles();
+			float total_heat= 0.0f;
+			for(unsigned int i= 0; i< particles.size(); i++)
+				total_heat+= particles[i]->heat;
+			std::cout << "total heat: " << total_heat << std::endl;
 
 			frame_time_total= 0;
 			frames= 0;

@@ -341,8 +341,7 @@ namespace Physics
 				color_field_gradient+= (p->position- n->position).Normalized()* partner_weight* Poly6Kernel_Derivative(distance);
 			}
 			color_field_laplacian_magnitude+= partner_weight* Poly6Kernel_SecondDerivative(distance);
-		}
-		*/
+		}*/
 
 		float weight= p->mass / p->density;
 		for(unsigned int i= 0; i< p->force_partners.size(); i++)
@@ -380,7 +379,7 @@ namespace Physics
 			partner_force+= (attraction_vector* (pressure_magnitude));
 
 			//Viscosity
-			partner_force+= (p->velocity- n->velocity)* (p->viscosity* ViscosityKernel_SecondDerivative(distance)* -1);
+			partner_force+= (p->velocity- n->velocity)* (((p->GetViscosity()+ n->GetViscosity())/ 2) * ViscosityKernel_SecondDerivative(distance)* -1);
 
 
 			force+= partner_force* partner_weight;
@@ -445,17 +444,34 @@ namespace Physics
 		}
 
 		//if(false)
-		for(int i= -8; i<= 2; i++)
+		for(int i= -2; i<= -2; i++)
 		{
-			for(int j= 80; j<= 160; j++)
+			for(int j= 50; j<= 260; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
 				p->static_= true;
-				p->velocity= MakeFVector2f(0.0f, -2.0f);
+				p->velocity= MakeFVector2f(0.0f, 0.0f);
 				p->mass= 1.0f;
 				p->gas_constant/= p->mass;
 				p->rest_density/= p->mass;
-				p->heat= 10.0f;
+				p->heat= 20.0f;
+				particles.push_back(p);
+				acceleration_grid->AddParticle(p);
+			}
+		}
+
+		//if(false)
+		for(int i= 2; i<= 2; i++)
+		{
+			for(int j= -260; j<= -50; j++)
+			{
+				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
+				p->static_= true;
+				p->velocity= MakeFVector2f(0.0f, 0.0f);
+				p->mass= 1.0f;
+				p->gas_constant/= p->mass;
+				p->rest_density/= p->mass;
+				p->heat= 0.0f;
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 			}
@@ -489,23 +505,18 @@ namespace Physics
 
 			for(unsigned int i= 0; i< particles.size(); i++)
 			{
-				ComputeAcceleration(particles[i]);
+				Particle *p= particles[i];
 
-				/*float heat= 0.0f;
-				float total= 0.0f;
-				float total_mass= 0.0f;
-				for (unsigned int j = 0; j < particles[i]->neighbors.size(); j++)
+				ComputeAcceleration(p);
+
+				float heat_force= 0.0f;
+				for (unsigned int j = 0; j < p->neighbors.size(); j++)
 				{
-					Particle *n= particles[i]->neighbors[j];
+					Particle *n= p->neighbors[j];
 
-					float foo= n->mass* Poly6Kernel(n->position.Distance(particles[i]->position));
-					total_mass+= n->mass;
-					total+= foo;
-
-					heat+= foo* n->heat;
+					heat_force+= p->conduction* n->conduction* (n->heat- p->heat)* (p->mass/ p->density)* Poly6Kernel_Lookup(p->position.Distance(n->position));
 				}
-				heat/= total;
-				particles[i]->heat+= (particles[i]->mass/ total_mass)* (heat- particles[i]->heat);*/
+				p->heat_delta+= heat_force/ p->mass;
 			}
 
 			for(unsigned int i= 0; i< particles.size(); i++)
@@ -556,7 +567,7 @@ namespace Physics
 
 	void Update()
 	{
-		particle_physics_system->Simulate(0.0333f* 1, 1);
+		particle_physics_system->Simulate(0.0333f* 0.75f, 1);
 	}
 
 	void Conclude()

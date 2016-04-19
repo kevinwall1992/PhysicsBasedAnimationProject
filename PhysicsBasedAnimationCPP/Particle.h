@@ -18,9 +18,12 @@ struct Particle
 
 	float mass, gas_constant, rest_density;
 	float pressure, density;
-	float viscosity;
+	float base_viscosity;
 	float tension;
+
+	float conduction;
 	float heat;
+	float heat_delta;
 
 	float foo;
 	FVector2f normal;
@@ -35,6 +38,8 @@ struct Particle
 	Particle(FVector2f position);
 
 	void Step(float time_step);
+
+	float GetViscosity();
 };
 
 #endif
