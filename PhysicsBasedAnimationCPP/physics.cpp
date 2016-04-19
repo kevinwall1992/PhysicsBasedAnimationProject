@@ -59,9 +59,9 @@ namespace Physics
 		int min_y= floor(grid_position[1]- grid_max_distance);
 		int max_y= floor(grid_position[1]+ grid_max_distance);
 
-		for(int i= min(max(min_x, 0), grid_size); i<= max(min(max_x, grid_size), 0); i++)
+		for(int i= min(max(min_x, 0), grid_size); i<= max(min(max_x, grid_size- 1), 0); i++)
 		{
-			for(int j= min(max(min_y, 0), grid_size); j<= max(min(max_y, grid_size), 0); j++)
+			for(int j= min(max(min_y, 0), grid_size); j<= max(min(max_y, grid_size- 1), 0); j++)
 			{
 				if(grid[i][j].size()== 0)
 					continue;
