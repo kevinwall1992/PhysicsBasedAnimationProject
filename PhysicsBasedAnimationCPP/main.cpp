@@ -78,7 +78,7 @@ int main (int argument_count, char *arguments[])
 
 		//std::cout << Physics::particle_physics_system->GetParticles()[47]->density << std::endl;
 		Graphics::Render(Physics::particle_physics_system->GetParticles());
-		//SDL_Delay(100);
+		//SDL_Delay(60);
 	}
 
 	Conclude();

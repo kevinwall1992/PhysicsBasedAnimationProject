@@ -9,7 +9,12 @@ Particle::Particle(FVector2f position_)
 	this->mass= 1.0f;
 	this->gas_constant= 0.2;
 	this->rest_density= 2.0f;
-	this->viscosity= 0.3f;
+	this->viscosity= 0.05f;
+	this->tension= 0.05f;
+	this->heat= 0.0f;
+
+	//this->foo= 0.0f;
+	this->normal.ZeroOut();
 
 	this->static_= false;
 }

@@ -41,7 +41,7 @@ namespace Graphics
 		glEnable(GL_TEXTURE_2D);
 		glPointSize(4);
 
-		float world_width = 60.0f;
+		float world_width = 45.0f;
 		float world_height = world_width/ current_aspect_ratio;
 		glOrtho(-world_width, world_width, -world_height, world_height, 0, 100);
 	}
@@ -76,7 +76,17 @@ namespace Graphics
 
 		glBegin(GL_POINTS);
 		for(unsigned int i= 0; i< particles.size(); i++)
+		{
+			FVector2f normal= particles[i]->normal.Normalized();
+			float magnitude= particles[i]->normal.Magnitude()/ 4.0f;
+
+			float heat_modifier= 1.0f- particles[i]->heat/ 10.0f;
+
+			//glColor3f(0.0f, magnitude* (normal[0]+ 1)/ 2, magnitude* (normal[1]+ 1)/ 2);
+			//glColor3f(1.0f, heat_modifier* 1.0f, heat_modifier* 1.0f);
+			
 			glVertex3f(particles[i]->position[0], particles[i]->position[1], 0.0f);
+		}
 		glEnd();
 
 		SDL_GL_SwapWindow(main_window);

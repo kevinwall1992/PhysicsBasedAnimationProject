@@ -40,12 +40,14 @@ namespace Physics
 	};
 
 	//need to add lookup table
-	float Poly6Kernel(float r, float h);
-	float SpikyKernel(float r, float h);
-	float SpikyKernel_Derivative(float r, float h);
-	float ViscosityKernel_SecondDerivative(float r, float h);
+	float Poly6Kernel(float r);
+	float Poly6Kernel_Derivative(float r);
+	float Poly6Kernel_SecondDerivative(float r);
+	float SpikyKernel(float r);
+	float SpikyKernel_Derivative(float r);
+	float ViscosityKernel_SecondDerivative(float r);
 
-	float Poly6Kernel_Lookup(float r, float h);
+	float Poly6Kernel_Lookup(float r);
 	void InitializeLookups();
 
 	class ParticlePhysicsSystem

@@ -14,9 +14,9 @@ namespace Physics
 	const int spiky_kernel_derivative_sampling_resolution[2]= {10, 1};
 	//const int compute_force_sampling_resolution[6]= {4, 4, 8, 6, 6, 1};
 
-	typedef LookupTable<float, 2, poly6_kernel_sampling_resolution> Poly6LookupTable;
+	typedef LookupTable<float, 1, poly6_kernel_sampling_resolution> Poly6LookupTable;
 	Poly6LookupTable *poly6_kernel_lookup_table;
-	typedef LookupTable<float, 2, spiky_kernel_derivative_sampling_resolution> SpikyDerivativeLookupTable;
+	typedef LookupTable<float, 1, spiky_kernel_derivative_sampling_resolution> SpikyDerivativeLookupTable;
 	SpikyDerivativeLookupTable *spiky_kernel_derivative_lookup_table;
 	//typedef LookupTable<FVector2f, 6, compute_force_sampling_resolution> ComputeForceLookupTable;
 	//ComputeForceLookupTable *compute_force_lookup_table;
@@ -148,16 +148,33 @@ namespace Physics
 		return &particle_neighbors[p];
 	}*/
 
-
-	float Poly6Kernel(float r, float h)
+	#define h 1.0f
+	float Poly6Kernel(float r)
 	{
 		if(r> h)
 			return 0;
 
-		return (float)pow(pow(h, 2)- pow(r, 2), 3)* 315/ (64* M_PI* pow(h, 9));
+		return (float)pow(pow(h, 2)- pow(r, 2), 3)* 315/ (float)(64* M_PI* pow(h, 9));
 	}
 
-	float SpikyKernel(float r, float h)
+	float Poly6Kernel_Derivative(float r)
+	{
+		if (r> h)
+			return 0;
+
+		return (float)pow(pow(h, 2)- pow(r, 2), 2)* r* -6* 315/ (float)(64* M_PI* pow(h, 9));
+	}
+
+	float Poly6Kernel_SecondDerivative(float r)
+	{
+		if (r> h)
+			return 0;
+
+		return (float)(6- (pow(h, 4)- 6* pow(h, 2)* pow(r/ 2.72f, 2)+ 9.5* pow(r* (2/ 2.72f), 10))* 6* 315/ (64* M_PI* pow(h, 9)));
+		//return 6 -(9.5* ((r* 2.0/ 2.75)^10)- 6* ((r* 1.0/ 2.75)^2)+ 1)* (945/ (32* M_PI));
+	}
+
+	float SpikyKernel(float r)
 	{
 		if(r> h)
 			return 0;
@@ -165,7 +182,7 @@ namespace Physics
 		return (float)pow(h- r, 3)* 15/ (M_PI* pow(h, 6));
 	}
 
-	float SpikyKernel_Derivative(float r, float h)
+	float SpikyKernel_Derivative(float r)
 	{
 		if(r> h)
 			return 0;
@@ -173,7 +190,7 @@ namespace Physics
 		return (float)(15/ (M_PI* pow(h, 6)))* -3* pow(r- 1, 2);
 	}
 
-	float ViscosityKernel_SecondDerivative(float r, float h)
+	float ViscosityKernel_SecondDerivative(float r)
 	{
 		if(r> h)
 			return 0;
@@ -181,24 +198,30 @@ namespace Physics
 		//return (float)(15/ (2* M_PI* pow(h, 3)))* ((-6.0/ (2* pow(h, 3)))* r+ (2.0/ pow(h, 2))+ (h/ pow(r, 3)));
 		return 45* (h- r)/ (M_PI* pow(h, 6));
 	}
-
+	#undef h
 	
-	float Poly6Kernel_Oracle(FVector2f input_vector)
+	float Poly6Kernel_Oracle(FVector<float, 1> input_vector)
 	{
-		return Poly6Kernel(input_vector.v[0], input_vector.v[1]);
+		return Poly6Kernel(input_vector.v[0]);
 	}
-	float Poly6Kernel_Lookup(float r, float h)
+	float Poly6Kernel_Lookup(float r)
 	{
-		return poly6_kernel_lookup_table->Lookup(MakeFVector2f(r, h));
+		FVector<float, 1> input_vector;
+		input_vector[0]= r;
+
+		return poly6_kernel_lookup_table->Lookup(input_vector);
 	}
 
-	float SpikyKernel_Derivative_Oracle(FVector2f input_vector)
+	float SpikyKernel_Derivative_Oracle(FVector<float, 1> input_vector)
 	{
-		return SpikyKernel_Derivative(input_vector.v[0], input_vector.v[1]);
+		return SpikyKernel_Derivative(input_vector.v[0]);
 	}
-	float SpikyKernel_Derivative_Lookup(float r, float h)
+	float SpikyKernel_Derivative_Lookup(float r)
 	{
-		return spiky_kernel_derivative_lookup_table->Lookup(MakeFVector2f(r, h));
+		FVector<float, 1> input_vector;
+		input_vector[0]= r;
+
+		return spiky_kernel_derivative_lookup_table->Lookup(input_vector);
 	}
 
 	void FreeLookups()
@@ -215,7 +238,7 @@ namespace Physics
 
 			float density= 0;
 			for(unsigned int j= 0; j< p->neighbors.size(); j++)
-				density+= p->mass* Poly6Kernel_Lookup(p->position.Distance(p->neighbors[j]->position), density_radius);
+				density+= p->mass* Poly6Kernel_Lookup(p->position.Distance(p->neighbors[j]->position));
 
 			p->density= density;
 			p->pressure= p->gas_constant* (p->density- p->rest_density);
@@ -266,12 +289,34 @@ namespace Physics
 	{
 		static float max_pressure= 0.0f;
 
-		//if(p->static_)
-		//	return;
+		if(!p->static_); else
+			return;
 
 		static FVector2f center= MakeFVector2f(0.001f, 0.001f);
 		FVector2f force;//you could try static as an experiment
 		force.ZeroOut();
+
+		FVector2f color_field_gradient;
+		color_field_gradient.ZeroOut();
+		float color_field_laplacian_magnitude= 0;
+		for(unsigned int i= 0; i< p->neighbors.size(); i++)
+		{
+			Particle *n= p->neighbors[i];
+
+			float partner_weight= n->mass/ n->density;
+			float distance= p->position.Distance(n->position);
+
+			if(p!= n)
+			{
+				color_field_gradient+= (p->position- n->position).Normalized()* partner_weight* Poly6Kernel_Derivative(distance);
+			}
+			color_field_laplacian_magnitude+= partner_weight* Poly6Kernel_SecondDerivative(distance);
+		}
+		float color_field_gradient_magnitude= color_field_gradient.Magnitude();
+		//p->foo= min(1.0f, color_field_gradient_magnitude/ 2.0f);
+		p->normal= color_field_gradient* -color_field_laplacian_magnitude;
+		if(color_field_gradient_magnitude> 0.25f)
+			force+= color_field_gradient* (-p->tension* color_field_laplacian_magnitude/ color_field_gradient_magnitude);
 
 		float weight= p->mass / p->density;
 		for(unsigned int i= 0; i< p->force_partners.size(); i++)
@@ -279,28 +324,28 @@ namespace Physics
 			if(p->force_partners[i]== nullptr)
 				continue;
 
-			Particle *n= p->neighbors[i];
-			if(n== p)
+			Particle *n= p->force_partners[i];
+			if(!(n== p)); else
 				continue;
 
 			FVector2f partner_force;
 			partner_force.ZeroOut();
 
-			float partner_weight= n->mass / n->density;
+			float partner_weight= n->mass/ n->density;
 			FVector2f attraction_vector= (p->position- n->position).Normalized();//curious whether this creates two vectors or one
 
 			float distance= p->position.Distance(n->position);
 			//Pressure
 			//max_pressure= max(max_pressure, (p->pressure+ n->pressure)/ 2);
-			float pressure_magnitude= max(0.0f, (p->pressure+ n->pressure)* (SpikyKernel_Derivative(distance, pressure_radius)/ -2));
+			float pressure_magnitude= max(0.0f, (p->pressure+ n->pressure)* (SpikyKernel_Derivative(distance)/ -2));
 			partner_force+= (attraction_vector* (pressure_magnitude));
 
 			//Viscosity
-			partner_force+= (p->velocity- n->velocity)* (p->viscosity* ViscosityKernel_SecondDerivative(distance, viscosity_radius)* -1);
+			partner_force+= (p->velocity- n->velocity)* (p->viscosity* ViscosityKernel_SecondDerivative(distance)* -1);
 
 
 			force+= partner_force* partner_weight;
-			n->acceleration+= partner_force*(-weight/ n->mass);
+			n->acceleration+= partner_force* (-weight/ n->mass);
 
 			p->force_partners[i]= nullptr;
 			for(unsigned int j= 0; j< n->force_partners.size(); j++)
@@ -317,13 +362,9 @@ namespace Physics
 		force+= (center- p->position).Normalized()* 0.05f;
 
 		//Friction
-		//force+= p->velocity* -0.35f;
+		force+= p->velocity* -0.0005f;
 
-		//Test
-		if(foo> 32.0f && foo< 32.3f)
-		{
-			p->static_= false;
-		}
+
 		//if(foo< 100);else
 		//	cout << max_pressure << std::endl;
 
@@ -343,27 +384,29 @@ namespace Physics
 	{
 		acceleration_grid= new AccelerationGrid(MakeFVector2f(-100.0f, -100.0f), 1.0f, 200);
 
-		for(int i= -20; i<= 20; i++)
+		//if(false)
+		for(int i= -15; i<= 15; i++)
 		{
-			for(int j= -20; j<= 20; j++)
+			for(int j= -15; j<= 15; j++)
 			{
-				Particle *p= new Particle(MakeFVector2f(i/ 1.75f, j/ 1.75f));
+				Particle *p= new Particle(MakeFVector2f(i/ 2.75f, j/ 2.75f));
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 			}
 		}
 
 		//if(false)
-		for(int i= -3; i<= 1; i++)
+		for(int i= -2; i<= 0; i++)
 		{
-			for(int j= 70; j<= 180; j++)
+			for(int j= 70; j<= 100; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
 				p->static_= true;
-				p->velocity= MakeFVector2f(0.0f, -4.0f);
+				p->velocity= MakeFVector2f(0.0f, -2.0f);
 				p->mass= 1.0f;
 				p->gas_constant/= p->mass;
 				p->rest_density/= p->mass;
+				p->heat= 10.0f;
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 			}
@@ -388,6 +431,10 @@ namespace Physics
 		FVector2f force;//opt
 		for(int step= 0; step< step_count; step++)
 		{
+			for(unsigned int i= 0; i< particles.size(); i++)
+				if(foo> 32.0f && foo< 32.3f)
+					particles[i]->static_= false;
+
 			acceleration_grid->UpdateGrid(particles);
 			UpdateParticleProperties();
 
@@ -412,14 +459,14 @@ namespace Physics
 		}
 
 		{
-			FVector2f low= MakeFVector2f(0.0f, 1.0f);
-			FVector2f high= MakeFVector2f(1.0f, 1.0f);
+			FVector<float, 1> low; low[0]= 0.0f;
+			FVector<float, 1> high; high[0]= 1.0f;
 			poly6_kernel_lookup_table= new Poly6LookupTable(Poly6Kernel_Oracle, low, high);
 		}
 
 		{
-			FVector2f low= MakeFVector2f(0.0f, 1.0f);
-			FVector2f high= MakeFVector2f(1.0f, 1.0f);
+			FVector<float, 1> low; low[0]= 0.0f;
+			FVector<float, 1> high; high[0]= 1.0f;
 			spiky_kernel_derivative_lookup_table= new SpikyDerivativeLookupTable(SpikyKernel_Derivative_Oracle, low, high);
 		}
 	}
@@ -432,7 +479,7 @@ namespace Physics
 
 	void Update()
 	{
-		particle_physics_system->Simulate(0.0333f* 2, 1);
+		particle_physics_system->Simulate(0.0333f* 1, 1);
 	}
 
 	void Conclude()

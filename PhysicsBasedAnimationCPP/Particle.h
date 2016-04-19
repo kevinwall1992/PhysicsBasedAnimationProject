@@ -19,6 +19,10 @@ struct Particle
 	float mass, gas_constant, rest_density;
 	float pressure, density;
 	float viscosity;
+	float tension;
+	float heat;
+
+	FVector2f normal;
 
 	bool static_;
 
