@@ -180,7 +180,7 @@ namespace Physics
 		float original= (float)pow(pow(h, 2)- pow(r, 2), 2)* r* -6* 315/ (float)(64* M_PI* pow(h, 9));
 		float modified= (float)pow(pow(h, 10)- pow(r, 10), 2)* r* -1* 315/ (float)(64* M_PI* pow(h, 9));
 
-		return modified* 0.75f+ original* 0.25f;
+		return modified* 0.65f+ original* 0.35f;
 	}
 
 	float Poly6Kernel_SecondDerivative(float r)
@@ -416,16 +416,20 @@ namespace Physics
 		}
 		float color_field_gradient_magnitude= color_field_gradient.Magnitude();
 		p->foo= 0.0f;
+		if(color_field_laplacian_magnitude> 50)
+			color_field_laplacian_magnitude= 50+ (color_field_laplacian_magnitude- 50)/ 2;
 		p->normal= color_field_gradient* -color_field_laplacian_magnitude;
+		p->foo= (color_field_laplacian_magnitude* (color_field_gradient_magnitude* 0.95f)+ 0.05f)/ 150.0f;
 		if(color_field_gradient_magnitude> 0.4f)
 		{
-			p->foo= color_field_gradient_magnitude/ 2.0f;
-			force+= color_field_gradient* (p->tension* color_field_laplacian_magnitude/ color_field_gradient_magnitude);
+			//p->foo= color_field_laplacian_magnitude/ 200.0f;
+			//p->foo= color_field_gradient_magnitude/ 2.0f;
+			force+= color_field_gradient* ((p->tension* color_field_laplacian_magnitude/ color_field_gradient_magnitude)* ((color_field_gradient_magnitude* 0.95f)+ 0.05f));
 		}
 
 		//Gravity
-		//force+= (center- p->position).Normalized()* 0.05f;
-		force+= MakeFVector2f(0.0f, -0.05f);
+		force+= (center- p->position).Normalized()* 0.05f;
+		//force+= MakeFVector2f(0.0f, -0.05f);
 
 		//Friction
 		force+= p->velocity* -0.0005f;
@@ -496,13 +500,13 @@ namespace Physics
 		}
 
 		//if(false)
-		for(int i= -3; i<= 1; i++)
+		for(int i= -15; i<= -13; i++)
 		{
 			for(int j= 60; j<= 120; j++)
 			{
 				Particle *p= new Particle(MakeFVector2f(i/ 1.5f, j/ 1.5f));
 				p->static_= true;
-				p->velocity= MakeFVector2f(-0.0f, -0.0f);
+				p->velocity= MakeFVector2f(-0.1f, -1.5f);
 				p->mass= 1.0f;
 				p->gas_constant/= p->mass;
 				p->rest_density/= p->mass;
