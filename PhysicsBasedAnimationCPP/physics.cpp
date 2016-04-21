@@ -561,8 +561,8 @@ namespace Physics
 
 			if((foo- last_spawn)> 0.1f)
 			{
-				Particle *p= new Particle(MakeFVector2f(-10.0f+ (rand()% 500)/ 100.0f, 60));
-				p->velocity= MakeFVector2f(-0.2f, -1.5f);
+				Particle *p= new Particle(MakeFVector2f(-25.0f+ (rand()% 500)/ 100.0f, 60));
+				p->velocity= MakeFVector2f(1.50f, -7.5f);
 				p->heat= 100.0f;
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
