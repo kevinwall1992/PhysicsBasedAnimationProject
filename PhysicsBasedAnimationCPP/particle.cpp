@@ -14,7 +14,7 @@ Particle::Particle(FVector2f position_)
 	this->tension= 0.005f;
 
 	this->conduction= 0.2f;
-	expansion_factor= 1.0f;
+	expansion_factor= 1.2f;
 	this->heat= 0.0f;
 	this->heat_delta= 0.0f;
 

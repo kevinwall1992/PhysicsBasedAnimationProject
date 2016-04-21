@@ -563,6 +563,7 @@ namespace Physics
 			{
 				Particle *p= new Particle(MakeFVector2f(-10.0f+ (rand()% 500)/ 100.0f, 60));
 				p->velocity= MakeFVector2f(-0.2f, -1.5f);
+				p->heat= 100.0f;
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 				last_spawn= foo;
@@ -574,7 +575,7 @@ namespace Physics
 			for(unsigned int i= 0; i< particles.size(); i++)
 			{
 				ComputeAcceleration(particles[i]);
-				//ComputeHeatTransfer(particles[i]);
+				ComputeHeatTransfer(particles[i]);
 			}
 			//particles[260]->heat_delta+= 1.0f;
 
