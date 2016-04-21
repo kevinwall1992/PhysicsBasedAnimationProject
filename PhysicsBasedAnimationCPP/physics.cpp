@@ -429,8 +429,8 @@ namespace Physics
 		}
 
 		//Gravity
-		//force+= (center- p->position).Normalized()* 0.05f;
-		force+= MakeFVector2f(0.0f, -0.05f);
+		force+= (center- p->position).Normalized()* 0.05f;
+		//force+= MakeFVector2f(0.0f, -0.05f);
 
 		//Friction
 		force+= p->velocity* -0.0005f;
@@ -581,8 +581,8 @@ namespace Physics
 			for(unsigned int i= 0; i< particles.size(); i++)
 				particles[i]->Step(total_time_step/ step_count);
 
-			for(unsigned int i= 0; i< particles.size(); i++)
-				Collide(particles[i]);
+			//for(unsigned int i= 0; i< particles.size(); i++)
+			//	Collide(particles[i]);
 
 			foo+= total_time_step/ step_count;
 		}

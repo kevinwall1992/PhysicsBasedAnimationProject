@@ -42,7 +42,7 @@ namespace Graphics
 		glEnable(GL_TEXTURE_2D);
 		glPointSize(4);
 
-		float world_width = 35.0f;
+		float world_width = 55.0f;
 		float world_height = world_width/ current_aspect_ratio;
 		glOrtho(-world_width, world_width, -world_height, world_height, 0, 100);
 	}
