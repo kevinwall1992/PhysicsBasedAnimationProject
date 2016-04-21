@@ -217,6 +217,16 @@ struct FVector
 		for(int i= 0; i< d; i++)
 			this->v[i]= (T)0;
 	}
+
+	float Dot(const FVector<T, d> &b)
+	{
+		float dot_product= 0;
+
+		for(int i= 0; i< d; i++)
+			dot_product+= this->v[i]* b.v[i];
+
+		return dot_product;
+	}
 };
 
 typedef FVector<float, 2> FVector2f;

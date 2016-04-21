@@ -17,8 +17,8 @@ using std::vector;
 
 namespace Graphics
 {
-	static const int DEFAULT_SCREEN_WIDTH= 1600;
-	static const int DEFAULT_SCREEN_HEIGHT= 900;
+	static const int DEFAULT_SCREEN_WIDTH= 1000;
+	static const int DEFAULT_SCREEN_HEIGHT= 600;
 
 	extern unsigned int current_screen_width;
 	extern unsigned int current_screen_height;

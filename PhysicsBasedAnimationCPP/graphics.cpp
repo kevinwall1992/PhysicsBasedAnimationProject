@@ -1,6 +1,7 @@
 #include "Graphics.h"
 
 #include <iostream>
+#include <minmax.h>
 
 namespace Graphics
 {
@@ -41,7 +42,7 @@ namespace Graphics
 		glEnable(GL_TEXTURE_2D);
 		glPointSize(4);
 
-		float world_width = 45.0f;
+		float world_width = 35.0f;
 		float world_height = world_width/ current_aspect_ratio;
 		glOrtho(-world_width, world_width, -world_height, world_height, 0, 100);
 	}
@@ -80,10 +81,12 @@ namespace Graphics
 			FVector2f normal= particles[i]->normal.Normalized();
 			float magnitude= particles[i]->normal.Magnitude()/ 4.0f;
 
-			float heat_modifier= 1.0f- particles[i]->heat/ 10.0f;
+			float heat_modifier= max(0.0f, 1.0f- particles[i]->heat/ 10.0f);
+			float heat_modifier2= (particles[i]->heat- 10.0f)/ 90.0f;
 
 			//glColor3f(0.0f, magnitude* (normal[0]+ 1)/ 2, magnitude* (normal[1]+ 1)/ 2);
-			glColor3f(1.0f, heat_modifier* 1.0f, heat_modifier* 1.0f);
+			//glColor3f(particles[i]->foo* 1.0f, particles[i]->foo* (heat_modifier< 0.001f ? heat_modifier2 : heat_modifier)* 1.0f, particles[i]->foo* heat_modifier* 1.0f);
+			glColor3f(1.0f, (heat_modifier< 0.001f ? heat_modifier2 : heat_modifier)* 1.0f, heat_modifier* 1.0f);
 			//glColor3f(particles[i]->foo* 1.0f, particles[i]->foo* 1.0f, particles[i]->foo* 1.0f);
 			
 			glVertex3f(particles[i]->position[0], particles[i]->position[1], 0.0f);

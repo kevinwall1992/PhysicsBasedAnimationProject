@@ -6,9 +6,7 @@
 #include <vector>
 using std::vector;
 
-#define density_radius 1.0f
-#define pressure_radius 1.0f
-#define viscosity_radius 1.0f
+#define kernel_radius 1.0f
 struct Particle
 {
 	FVector2f position;
@@ -21,7 +19,9 @@ struct Particle
 	float base_viscosity;
 	float tension;
 
+
 	float conduction;
+	float expansion_factor;
 	float heat;
 	float heat_delta;
 

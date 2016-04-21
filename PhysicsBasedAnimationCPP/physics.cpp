@@ -10,10 +10,10 @@ namespace Physics
 {
 	ParticlePhysicsSystem *particle_physics_system;
 
-	const int poly6_kernel_sampling_resolution[2]= {10, 1};
-	const int poly6_kernel_derivative_sampling_resolution[1]= {10};
-	const int poly6_kernel_second_derivative_sampling_resolution[1]= {10};
-	const int spiky_kernel_derivative_sampling_resolution[2]= {10, 1};
+	const int poly6_kernel_sampling_resolution[1]= {20};
+	const int poly6_kernel_derivative_sampling_resolution[1]= {20};
+	const int poly6_kernel_second_derivative_sampling_resolution[1]= {20};
+	const int spiky_kernel_derivative_sampling_resolution[1]= {20};
 	//const int compute_force_sampling_resolution[6]= {4, 4, 8, 6, 6, 1};
 
 	typedef LookupTable<float, 1, poly6_kernel_sampling_resolution> Poly6LookupTable;
@@ -45,10 +45,20 @@ namespace Physics
 	//(or stop storing grid indices, because we dont use them)
 	void AccelerationGrid::ComputeParticleNeighbors(Particle *p)
 	{
-		float max_distance= 1;
+		float max_distance= kernel_radius;
 
 		p->neighbors.clear();
 
+		if(!p->static_); else
+			return;
+
+		/*vector<Particle *> particles= particle_physics_system->GetParticles();
+		for(unsigned int i= 0; i< particles.size(); i++)
+		{
+			if(!particles[i]->static_ && p->position.Distance(particles[i]->position)< max_distance)
+				p->neighbors.push_back(particles[i]);
+		}*/
+		
 		float squared_max_distance= max_distance* max_distance;
 		float grid_max_distance= max_distance/ grid_cell_size;
 		float grid_squared_max_distance= pow(grid_max_distance, 2);//faster to be explicit? Also, having to calculate this every call...
@@ -73,7 +83,7 @@ namespace Physics
 				
 				for(unsigned int k= 0; k< grid[i][j].size(); k++)
 				{
-					if(p->static_)
+					if(grid[i][j][k]->static_)
 						continue;
 					if((p->position.SquaredDistance(grid[i][j][k]->position)>= squared_max_distance))//should be strictly greater than
 						continue;
@@ -88,12 +98,11 @@ namespace Physics
 		else
 		{
 			for(unsigned int i= 0; i< unaccelerated_space.size(); i++)
-				if(!p->static_)
+				if(!unaccelerated_space[i]->static_)
 					if(p->position.SquaredDistance(unaccelerated_space[i]->position)< squared_max_distance)
 						p->neighbors.push_back(unaccelerated_space[i]);
 		}
 
-		//this is hacky... should NOT be in this function.
 		p->force_partners= p->neighbors;
 	}
 
@@ -154,7 +163,7 @@ namespace Physics
 		return &particle_neighbors[p];
 	}*/
 
-	#define h 1.0f
+	#define h kernel_radius
 	float Poly6Kernel(float r)
 	{
 		if(r> h)
@@ -168,7 +177,10 @@ namespace Physics
 		if (r> h)
 			return 0;
 
-		return (float)pow(pow(h, 2)- pow(r, 2), 2)* r* -6* 315/ (float)(64* M_PI* pow(h, 9));
+		float original= (float)pow(pow(h, 2)- pow(r, 2), 2)* r* -6* 315/ (float)(64* M_PI* pow(h, 9));
+		float modified= (float)pow(pow(h, 10)- pow(r, 10), 2)* r* -1* 315/ (float)(64* M_PI* pow(h, 9));
+
+		return modified* 0.75f+ original* 0.25f;
 	}
 
 	float Poly6Kernel_SecondDerivative(float r)
@@ -176,8 +188,11 @@ namespace Physics
 		if (r> h)
 			return 0;
 
-		return (float)(6- (pow(h, 4)- 6* pow(h, 2)* pow(r/ 2.72f, 2)+ 9.5* pow(r* (2/ 2.72f), 10))* 6* 315/ (64* M_PI* pow(h, 9)));
-		//return 6 -(9.5* ((r* 2.0/ 2.75)^10)- 6* ((r* 1.0/ 2.75)^2)+ 1)* (945/ (32* M_PI));
+		float original= -(float)((5* pow(h, 4)- 6* pow(h, 2)* (r, 2)+ pow(r, 4))* 6* 315/ (64* M_PI* pow(h, 9)));
+		//float modified= (float)(6- (pow(h, 4)- 6* pow(h, 2)* pow(r/ 2.72f, 2)+ 9.5* pow(r* (2/ 2.72f), 10))* 6* 315/ (64* M_PI* pow(h, 9)));
+		float modified= (float)(7- pow(h, 4.8)- pow(h, 3)* (pow(h, 7)- 6* pow(h, 6.9)* pow(r/ 2.72f, 2)+ 9.5* pow(r* (2/ 2.72f), 10))* 6* 315/ (64* M_PI* pow(h, 9)));
+
+		return modified* 0.45f+ original* 0.55f;
 	}
 
 	float SpikyKernel(float r)
@@ -268,7 +283,10 @@ namespace Physics
 
 			float density= 0;
 			for(unsigned int j= 0; j< p->neighbors.size(); j++)
-				density+= p->mass* Poly6Kernel_Lookup(p->position.Distance(p->neighbors[j]->position));
+			{
+				Particle *n= p->neighbors[j];
+				density+= (1+ (p->expansion_factor- 1)* p->heat/ 100.0f)* n->mass* Poly6Kernel_Lookup(p->position.Distance(n->position));
+			}
 
 			p->density= density;
 			p->pressure= p->gas_constant* (p->density- p->rest_density);
@@ -353,7 +371,8 @@ namespace Physics
 			//including self
 
 			float partner_weight= n->mass/ n->density;
-			float distance= p->position.Distance(n->position);
+			FVector2f displacement= (p->position- n->position);
+			float distance= displacement.Magnitude();
 			color_field_laplacian_magnitude+= partner_weight* Poly6Kernel_SecondDerivative_Lookup(distance);
 
 			if(!(n== p)); else
@@ -362,7 +381,7 @@ namespace Physics
 			//exlcuding self
 
 			//can do less computation if we divide by distance, etc
-			FVector2f attraction_vector= (p->position- n->position).Normalized();//curious whether this creates two vectors or one
+			FVector2f attraction_vector= displacement/ distance;//curious whether this creates two vectors or one
 			color_field_gradient+= attraction_vector* partner_weight* Poly6Kernel_Derivative_Lookup(distance);
 
 			if(p->force_partners[i]== nullptr)
@@ -398,17 +417,18 @@ namespace Physics
 		float color_field_gradient_magnitude= color_field_gradient.Magnitude();
 		p->foo= 0.0f;
 		p->normal= color_field_gradient* -color_field_laplacian_magnitude;
-		if(color_field_gradient_magnitude> 0.05f)
+		if(color_field_gradient_magnitude> 0.4f)
 		{
 			p->foo= color_field_gradient_magnitude/ 2.0f;
-			force+= color_field_gradient* (-p->tension* color_field_laplacian_magnitude/ color_field_gradient_magnitude);
+			force+= color_field_gradient* (p->tension* color_field_laplacian_magnitude/ color_field_gradient_magnitude);
 		}
 
 		//Gravity
-		force+= (center- p->position).Normalized()* 0.05f;
+		//force+= (center- p->position).Normalized()* 0.05f;
+		force+= MakeFVector2f(0.0f, -0.05f);
 
 		//Friction
-		force+= p->velocity* -0.00025f;
+		force+= p->velocity* -0.0005f;
 
 
 		//if(foo< 100);else
@@ -426,6 +446,40 @@ namespace Physics
 		p->acceleration+= force/ p->mass;
 	}
 
+	void ParticlePhysicsSystem::ComputeHeatTransfer(Particle *p)
+	{
+		float heat_force= 0.0f;
+		for (unsigned int j = 0; j < p->neighbors.size(); j++)
+		{
+			Particle *n= p->neighbors[j];
+
+			heat_force+= p->conduction* n->conduction* (n->heat- p->heat)* (p->mass/ p->density)* Poly6Kernel_Lookup(p->position.Distance(n->position));
+		}
+		p->heat_delta+= heat_force/ p->mass;
+	}
+
+	void ParticlePhysicsSystem::Collide(Particle *p)
+	{
+		FVector2f center= MakeFVector2f(0.0f, 19.0f);
+		float radius= 38.0f;
+
+		FVector2f displacement= center- p->position;
+		if(abs(displacement[0])> radius)
+			displacement= MakeFVector2f(0.0f, radius+ 1);
+		float distance= displacement.Magnitude();
+		FVector2f direction= displacement/ distance;
+		FVector2f tangent= MakeFVector2f(direction[1]* -1, direction[0]);
+		if((direction[1]> 0) && distance> radius)
+		{
+			p->position+= direction* (distance- radius);
+			p->velocity-= direction* direction.Dot(p->velocity)* 2;
+			p->velocity-= tangent* tangent.Dot(p->velocity)* 0.05f;
+
+		}
+
+
+	}
+
 	ParticlePhysicsSystem::ParticlePhysicsSystem()
 	{
 		acceleration_grid= new AccelerationGrid(MakeFVector2f(-100.0f, -100.0f), 1.0f, 200);
@@ -435,26 +489,24 @@ namespace Physics
 		{
 			for(int j= -20; j<= 20; j++)
 			{
-				Particle *p= new Particle(MakeFVector2f(i/ 2.75f, j/ 2.75f));
-				if(i== -8 && j== -8)
-					p->heat= 10.0f;
+				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 			}
 		}
 
 		//if(false)
-		for(int i= -14; i<= -10; i++)
+		for(int i= -3; i<= 1; i++)
 		{
-			for(int j= 50; j<= 260; j++)
+			for(int j= 60; j<= 120; j++)
 			{
-				Particle *p= new Particle(MakeFVector2f(i/ 2.0f, j/ 2.0f));
+				Particle *p= new Particle(MakeFVector2f(i/ 1.5f, j/ 1.5f));
 				p->static_= true;
-				p->velocity= MakeFVector2f(-0.15f, -3.0f);
+				p->velocity= MakeFVector2f(-0.0f, -0.0f);
 				p->mass= 1.0f;
 				p->gas_constant/= p->mass;
 				p->rest_density/= p->mass;
-				p->heat= 20.0f;
+				//p->heat= 100.0f;
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 			}
@@ -497,7 +549,7 @@ namespace Physics
 		for(int step= 0; step< step_count; step++)
 		{
 			for(unsigned int i= 0; i< particles.size(); i++)
-				if(foo> 32.0f && foo< 32.3f)
+				if(foo> 62.0f && foo< 62.3f)
 					particles[i]->static_= false;
 
 			acceleration_grid->UpdateGrid(particles);
@@ -505,22 +557,15 @@ namespace Physics
 
 			for(unsigned int i= 0; i< particles.size(); i++)
 			{
-				Particle *p= particles[i];
-
-				ComputeAcceleration(p);
-
-				float heat_force= 0.0f;
-				for (unsigned int j = 0; j < p->neighbors.size(); j++)
-				{
-					Particle *n= p->neighbors[j];
-
-					heat_force+= p->conduction* n->conduction* (n->heat- p->heat)* (p->mass/ p->density)* Poly6Kernel_Lookup(p->position.Distance(n->position));
-				}
-				p->heat_delta+= heat_force/ p->mass;
+				ComputeAcceleration(particles[i]);
+				ComputeHeatTransfer(particles[i]);
 			}
 
 			for(unsigned int i= 0; i< particles.size(); i++)
 				particles[i]->Step(total_time_step/ step_count);
+
+			for(unsigned int i= 0; i< particles.size(); i++)
+				Collide(particles[i]);
 
 			foo+= total_time_step/ step_count;
 		}
@@ -536,25 +581,25 @@ namespace Physics
 
 		{
 			FVector<float, 1> low; low[0]= 0.0f;
-			FVector<float, 1> high; high[0]= 1.0f;
+			FVector<float, 1> high; high[0]= kernel_radius;
 			poly6_kernel_lookup_table= new Poly6LookupTable(Poly6Kernel_Oracle, low, high);
 		}
 
 		{
 			FVector<float, 1> low; low[0]= 0.0f;
-			FVector<float, 1> high; high[0]= 1.0f;
+			FVector<float, 1> high; high[0]= kernel_radius;
 			poly6_kernel_derivative_lookup_table= new Poly6DerivativeLookupTable(Poly6Kernel_Derivative_Oracle, low, high);
 		}
 
 		{
 			FVector<float, 1> low; low[0]= 0.0f;
-			FVector<float, 1> high; high[0]= 1.0f;
+			FVector<float, 1> high; high[0]= kernel_radius;
 			poly6_kernel_second_derivative_lookup_table= new Poly6SecondDerivativeLookupTable(Poly6Kernel_SecondDerivative_Oracle, low, high);
 		}
 
 		{
 			FVector<float, 1> low; low[0]= 0.0f;
-			FVector<float, 1> high; high[0]= 1.0f;
+			FVector<float, 1> high; high[0]= kernel_radius;
 			spiky_kernel_derivative_lookup_table= new SpikyDerivativeLookupTable(SpikyKernel_Derivative_Oracle, low, high);
 		}
 	}
@@ -567,7 +612,7 @@ namespace Physics
 
 	void Update()
 	{
-		particle_physics_system->Simulate(0.0333f* 0.75f, 1);
+		particle_physics_system->Simulate(0.0333f* 1.4f, 1);
 	}
 
 	void Conclude()
