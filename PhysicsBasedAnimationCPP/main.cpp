@@ -34,7 +34,7 @@ void Update()
 	//HFS_State::Update();
 }
 
-const int frame_wait= 10;
+const int frame_wait= 100;
 
 int main (int argument_count, char *arguments[])
 {	
@@ -81,7 +81,7 @@ int main (int argument_count, char *arguments[])
 
 		Update();
 
-		int frame_wait= (int)(((1/ 60.0f)- Timing::frame_time_in_seconds)* 1000);
+		int frame_wait= (int)(((1/ 100.0f)- Timing::frame_time_in_seconds)* 1000);
 		if(frame_wait> 0)
 			SDL_Delay(frame_wait);
 
