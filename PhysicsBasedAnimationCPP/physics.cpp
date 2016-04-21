@@ -629,7 +629,7 @@ namespace Physics
 
 	void Update()
 	{
-		particle_physics_system->Simulate(0.0333f* 2.4f, 1);
+		particle_physics_system->Simulate(0.0333f* 2.0f, 1);
 	}
 
 	void Conclude()
