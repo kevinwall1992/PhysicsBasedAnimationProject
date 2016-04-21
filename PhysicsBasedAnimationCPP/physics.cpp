@@ -419,7 +419,7 @@ namespace Physics
 		if(color_field_laplacian_magnitude> 50)
 			color_field_laplacian_magnitude= 50+ (color_field_laplacian_magnitude- 50)/ 2;
 		p->normal= color_field_gradient* -color_field_laplacian_magnitude;
-		p->foo= (color_field_laplacian_magnitude* (color_field_gradient_magnitude* 0.95f)+ 0.05f)/ 150.0f;
+		p->foo= 0.2f+ 0.8f* (color_field_laplacian_magnitude* (color_field_gradient_magnitude* 0.95f)+ 0.05f)/ 150.0f;
 		if(color_field_gradient_magnitude> 0.4f)
 		{
 			//p->foo= color_field_laplacian_magnitude/ 200.0f;
@@ -428,8 +428,8 @@ namespace Physics
 		}
 
 		//Gravity
-		force+= (center- p->position).Normalized()* 0.05f;
-		//force+= MakeFVector2f(0.0f, -0.05f);
+		//force+= (center- p->position).Normalized()* 0.05f;
+		force+= MakeFVector2f(0.0f, -0.05f);
 
 		//Friction
 		force+= p->velocity* -0.0005f;
@@ -499,7 +499,7 @@ namespace Physics
 			}
 		}
 
-		//if(false)
+		if(false)
 		for(int i= -15; i<= -13; i++)
 		{
 			for(int j= 60; j<= 120; j++)
@@ -510,7 +510,7 @@ namespace Physics
 				p->mass= 1.0f;
 				p->gas_constant/= p->mass;
 				p->rest_density/= p->mass;
-				//p->heat= 100.0f;
+				p->heat= 100.0f;
 				particles.push_back(p);
 				acceleration_grid->AddParticle(p);
 			}
@@ -564,6 +564,7 @@ namespace Physics
 				ComputeAcceleration(particles[i]);
 				ComputeHeatTransfer(particles[i]);
 			}
+			particles[260]->heat_delta+= 1.0f;
 
 			for(unsigned int i= 0; i< particles.size(); i++)
 				particles[i]->Step(total_time_step/ step_count);
@@ -616,7 +617,7 @@ namespace Physics
 
 	void Update()
 	{
-		particle_physics_system->Simulate(0.0333f* 1.4f, 1);
+		particle_physics_system->Simulate(0.0333f* 0.3f, 1);
 	}
 
 	void Conclude()

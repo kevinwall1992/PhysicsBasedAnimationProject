@@ -82,7 +82,7 @@ namespace Graphics
 			float magnitude= particles[i]->normal.Magnitude()/ 4.0f;
 
 			float heat_modifier= max(0.0f, 1.0f- particles[i]->heat/ 10.0f);
-			float heat_modifier2= (particles[i]->heat- 10.0f)/ 90.0f;
+			float heat_modifier2= min(1.0f, (particles[i]->heat- 10.0f)/ 90.0f);
 
 			//glColor3f(0.0f, magnitude* (normal[0]+ 1)/ 2, magnitude* (normal[1]+ 1)/ 2);
 			glColor3f(particles[i]->foo* 1, particles[i]->foo* (heat_modifier< 0.001f ? heat_modifier2 : heat_modifier)* 1.0f, particles[i]->foo* heat_modifier* 1.0f);
