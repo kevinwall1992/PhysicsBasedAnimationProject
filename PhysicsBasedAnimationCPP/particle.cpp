@@ -10,7 +10,7 @@ Particle::Particle(FVector2f position_)
 	this->mass= 1.0f;
 	this->gas_constant= 0.2;
 	this->rest_density= 2.0f;
-	this->base_viscosity= 0.05f;
+	this->base_viscosity= 0.15f;
 	this->tension= 0.005f;
 
 	this->conduction= 0.2f;
