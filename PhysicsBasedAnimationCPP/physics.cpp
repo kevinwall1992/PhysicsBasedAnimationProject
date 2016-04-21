@@ -3,6 +3,7 @@
 
 #include <minmax.h>
 #include <iostream>
+#include <random>
 using std::cout;
 
 
@@ -419,7 +420,7 @@ namespace Physics
 		if(color_field_laplacian_magnitude> 50)
 			color_field_laplacian_magnitude= 50+ (color_field_laplacian_magnitude- 50)/ 2;
 		p->normal= color_field_gradient* -color_field_laplacian_magnitude;
-		p->foo= 0.2f+ 0.8f* (color_field_laplacian_magnitude* (color_field_gradient_magnitude* 0.95f)+ 0.05f)/ 150.0f;
+		p->foo= 0.0f+ 1.0f* (color_field_laplacian_magnitude* (color_field_gradient_magnitude* 0.95f)+ 0.05f)/ 90.0f;
 		if(color_field_gradient_magnitude> 0.4f)
 		{
 			//p->foo= color_field_laplacian_magnitude/ 200.0f;
@@ -488,7 +489,7 @@ namespace Physics
 	{
 		acceleration_grid= new AccelerationGrid(MakeFVector2f(-100.0f, -100.0f), 1.0f, 200);
 
-		//if(false)
+		if(false)
 		for(int i= -20; i<= 20; i++)
 		{
 			for(int j= -20; j<= 20; j++)
@@ -549,12 +550,23 @@ namespace Physics
 
 	void ParticlePhysicsSystem::Simulate(float total_time_step, int step_count)
 	{
+		static float last_spawn= 0.0f;
+
 		FVector2f force;//opt
 		for(int step= 0; step< step_count; step++)
 		{
-			for(unsigned int i= 0; i< particles.size(); i++)
+			/*for(unsigned int i= 0; i< particles.size(); i++)
 				if(foo> 62.0f && foo< 62.3f)
-					particles[i]->static_= false;
+					particles[i]->static_= false;*/
+
+			if((foo- last_spawn)> 0.1f)
+			{
+				Particle *p= new Particle(MakeFVector2f(-20.0f+ (rand()% 500)/ 100.0f, 60));
+				p->velocity= MakeFVector2f(0.0f, -1.0f);
+				particles.push_back(p);
+				acceleration_grid->AddParticle(p);
+				last_spawn= foo;
+			}
 
 			acceleration_grid->UpdateGrid(particles);
 			UpdateParticleProperties();
@@ -562,9 +574,9 @@ namespace Physics
 			for(unsigned int i= 0; i< particles.size(); i++)
 			{
 				ComputeAcceleration(particles[i]);
-				ComputeHeatTransfer(particles[i]);
+				//ComputeHeatTransfer(particles[i]);
 			}
-			particles[260]->heat_delta+= 1.0f;
+			//particles[260]->heat_delta+= 1.0f;
 
 			for(unsigned int i= 0; i< particles.size(); i++)
 				particles[i]->Step(total_time_step/ step_count);
@@ -617,7 +629,7 @@ namespace Physics
 
 	void Update()
 	{
-		particle_physics_system->Simulate(0.0333f* 0.3f, 1);
+		particle_physics_system->Simulate(0.0333f* 2.4f, 1);
 	}
 
 	void Conclude()

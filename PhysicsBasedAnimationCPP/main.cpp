@@ -52,6 +52,7 @@ int main (int argument_count, char *arguments[])
 	while (true)
 	{
 		frame_time_total+= Timing::frame_time_in_seconds;
+
 		frames++;
 		total_frames++;
 		total_time+= Timing::frame_time_in_seconds;
@@ -72,19 +73,23 @@ int main (int argument_count, char *arguments[])
 			float total_heat= 0.0f;
 			for(unsigned int i= 0; i< particles.size(); i++)
 				total_heat+= particles[i]->heat;
-			std::cout << "total heat: " << total_heat << std::endl;
+			std::cout << "total heat: " << total_heat << "# particles: " << particles.size() << std::endl;
 
 			frame_time_total= 0;
 			frames= 0;
 		}
 
 		Update();
+
+		int frame_wait= (int)(((1/ 60.0f)- Timing::frame_time_in_seconds)* 1000);
+		if(frame_wait> 0)
+			SDL_Delay(frame_wait);
+
 		if(Input::Context::GameOverRequested())
 			break;
 
 		//std::cout << Physics::particle_physics_system->GetParticles()[47]->density << std::endl;
 		Graphics::Render(Physics::particle_physics_system->GetParticles());
-		//SDL_Delay(60);
 	}
 
 	Conclude();
